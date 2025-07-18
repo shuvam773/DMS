@@ -16,11 +16,11 @@ router.post(
   userController.createUser
 );
 
-// Get all institutes with filtering (Admin only)
+// Get all institutes
 router.get(
   '/',
   verifyToken,
-  authorizeRole('admin'),
+  authorizeRole('admin', 'institute'),
   userController.getAllUsers
 );
 
@@ -28,7 +28,7 @@ router.get(
 router.get(
   '/:id',
   verifyToken,
-  authorizeRole('admin'),
+  authorizeRole('admin', 'institute'),
   userController.getUserById
 );
 

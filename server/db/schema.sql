@@ -1,15 +1,33 @@
+-- Orders table (main order container)
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL PRIMARY KEY,
-  drug TEXT NOT NULL,
-  quantity INTEGER NOT NULL,
-  seller_name TEXT NOT NULL,
-  order_no INTEGER NOT NULL UNIQUE,
+  order_no TEXT NOT NULL UNIQUE,
   status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending', 'approved')),
-  
-  -- Reference to the user who created the order
+    CHECK (status IN ('pending', 'approved', 'processing', 'shipped', 'delivered', 'cancelled')),
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-  
+  recipient_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  transaction_type TEXT NOT NULL CHECK (transaction_type IN ('institute', 'manufacturer')),
+  notes TEXT,
+  total_amount DECIMAL(12,2) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Order items (individual drugs in the order)
+CREATE TABLE IF NOT EXISTS order_items (
+  id SERIAL PRIMARY KEY,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  drug_id INTEGER REFERENCES drugs(id) ON DELETE SET NULL,
+  custom_name TEXT,
+  manufacturer_name TEXT,
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  unit_price DECIMAL(10,2),
+  total_price DECIMAL(12,2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
+  source_type TEXT CHECK (source_type IN ('institute', 'manufacturer')),
+  batch_no TEXT,
+  seller_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'approved', 'out_of_stock', 'rejected', 'shipped')),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

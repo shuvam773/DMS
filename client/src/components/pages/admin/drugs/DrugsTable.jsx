@@ -25,22 +25,31 @@ const DrugsTable = () => {
   }, []);
 
   const fetchDrugs = async () => {
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8080/api/drugs', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      setDrugs(response.data);
-    } catch (error) {
-      console.error('Error fetching drugs:', error);
-      toast.error('Failed to load drugs');
-    } finally {
-      setIsLoading(false);
+  setIsLoading(true);
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get('http://localhost:8080/api/drugs', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    // Check if response has drugs array
+    if (response.data && Array.isArray(response.data.drugs)) {
+      setDrugs(response.data.drugs);
+    } else {
+      console.error('Invalid response format:', response.data);
+      toast.error('Received invalid data format from server');
+      setDrugs([]); // Set to empty array as fallback
     }
-  };
+  } catch (error) {
+    console.error('Error fetching drugs:', error);
+    toast.error('Failed to load drugs');
+    setDrugs([]); // Set to empty array on error
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleDrugAdded = (newDrug) => {
     setDrugs(prev => [...prev, {

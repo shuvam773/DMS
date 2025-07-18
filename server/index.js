@@ -12,6 +12,7 @@ const orderRoutes = require('./routes/orderRoutes');
 
 const usersRoutes = require('./routes/usersRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const sellerRoutes = require('./routes/sellerRoutes')
 
 const PORT = process.env.PORT || 8000;
 
@@ -24,6 +25,7 @@ app.use("/api/auth", authRoutes);
 // app.use("/api/users", userRoutes);
 app.use("/api/drugs", drugRoutes);
 app.use("/api/orders", orderRoutes);
+app.use('/api/seller', sellerRoutes);
 // app.use("/api/bills", billingRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/analytics", analyticsRoutes);

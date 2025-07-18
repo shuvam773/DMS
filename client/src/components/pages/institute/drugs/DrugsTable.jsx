@@ -30,33 +30,54 @@ const DrugsTable = () => {
       const token = localStorage.getItem('token');
       const response = await axios.get('http://localhost:8080/api/drugs', {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      setDrugs(response.data);
+
+      // Check if response has drugs array
+      if (response.data && Array.isArray(response.data.drugs)) {
+        setDrugs(response.data.drugs);
+      } else {
+        console.error('Invalid response format:', response.data);
+        toast.error('Received invalid data format from server');
+        setDrugs([]); // Set to empty array as fallback
+      }
     } catch (error) {
-      
       console.error('Error fetching drugs:', error);
       toast.error('Failed to load drugs');
+      setDrugs([]); // Set to empty array on error
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDrugAdded = (newDrug) => {
-    setDrugs(prev => [...prev, {
-      ...newDrug,
-      price: typeof newDrug.price === 'string' ? parseFloat(newDrug.price) : newDrug.price
-    }]);
+    setDrugs((prev) => [
+      ...prev,
+      {
+        ...newDrug,
+        price:
+          typeof newDrug.price === 'string'
+            ? parseFloat(newDrug.price)
+            : newDrug.price,
+      },
+    ]);
   };
 
   const handleDrugUpdated = (updatedDrug) => {
-    setDrugs(prev => prev.map(drug => 
-      drug.id === updatedDrug.id ? {
-        ...updatedDrug,
-        price: typeof updatedDrug.price === 'string' ? parseFloat(updatedDrug.price) : updatedDrug.price
-      } : drug
-    ));
+    setDrugs((prev) =>
+      prev.map((drug) =>
+        drug.id === updatedDrug.id
+          ? {
+              ...updatedDrug,
+              price:
+                typeof updatedDrug.price === 'string'
+                  ? parseFloat(updatedDrug.price)
+                  : updatedDrug.price,
+            }
+          : drug
+      )
+    );
   };
 
   const handleEdit = (drug) => {
@@ -73,12 +94,12 @@ const DrugsTable = () => {
       const token = localStorage.getItem('token');
       await axios.delete(`http://localhost:8080/api/drugs/${id}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
+
       toast.success('Drug deleted successfully');
-      setDrugs(prev => prev.filter(drug => drug.id !== id));
+      setDrugs((prev) => prev.filter((drug) => drug.id !== id));
     } catch (error) {
       console.error('Error deleting drug:', error);
       toast.error(error.response?.data?.error || 'Failed to delete drug');
@@ -93,7 +114,7 @@ const DrugsTable = () => {
             <FaPills className="mr-2 text-blue-600" />
             Drugs Inventory
           </h2>
-          <button 
+          <button
             onClick={() => setIsModalOpen(true)}
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
@@ -101,7 +122,7 @@ const DrugsTable = () => {
             Add New Drug
           </button>
         </div>
-        
+
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -112,53 +133,97 @@ const DrugsTable = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Batch No</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Description</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">MFG Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">EXP Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Price</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Stock</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Batch No
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Description
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      MFG Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      EXP Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Price
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Stock
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {drugs.map((drug) => {
                     const expiringSoon = isExpiringSoon(drug.exp_date);
                     return (
-                      <tr key={drug.id} className="hover:bg-gray-50 transition-colors">
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${expiringSoon ? 'text-red-600' : 'text-gray-900'}`}>
+                      <tr
+                        key={drug.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td
+                          className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                            expiringSoon ? 'text-red-600' : 'text-gray-900'
+                          }`}
+                        >
                           <div className="flex items-center">
-                            {expiringSoon && <FaExclamationTriangle className="mr-2 text-red-500" />}
+                            {expiringSoon && (
+                              <FaExclamationTriangle className="mr-2 text-red-500" />
+                            )}
                             {drug.name}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{drug.batch_no}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{drug.description}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {drug.batch_no}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                          {drug.description}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {new Date(drug.mfg_date).toLocaleDateString()}
                         </td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${expiringSoon ? 'font-semibold text-red-600' : 'text-gray-500'}`}>
+                        <td
+                          className={`px-6 py-4 whitespace-nowrap text-sm ${
+                            expiringSoon
+                              ? 'font-semibold text-red-600'
+                              : 'text-gray-500'
+                          }`}
+                        >
                           {new Date(drug.exp_date).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
-                          ₹{typeof drug.price === 'number' ? drug.price.toFixed(2) : parseFloat(drug.price).toFixed(2)}
+                          ₹
+                          {typeof drug.price === 'number'
+                            ? drug.price.toFixed(2)
+                            : parseFloat(drug.price).toFixed(2)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <span className={`px-2 py-1 rounded-full text-xs ${drug.stock > 10 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${
+                              drug.stock > 10
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}
+                          >
                             {drug.stock} in stock
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-4">
-                            <button 
+                            <button
                               onClick={() => handleEdit(drug)}
                               className="text-blue-600 hover:text-blue-900 transition-colors"
                               title="Edit"
                             >
                               <FiEdit2 className="h-5 w-5" />
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleDelete(drug.id)}
                               className="text-red-600 hover:text-red-900 transition-colors"
                               title="Delete"
@@ -176,8 +241,8 @@ const DrugsTable = () => {
           </div>
         )}
 
-        <AddDrugModal 
-          isOpen={isModalOpen} 
+        <AddDrugModal
+          isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onDrugAdded={handleDrugAdded}
         />

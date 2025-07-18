@@ -45,8 +45,20 @@ const getDrugs = async (req, res) => {
   try {
     let query, values;
     
-    if (req.user.role === 'institute' || req.user.role === 'pharmacy') {
-      // Join with users table to get creator name
+    const { created_by } = req.query;
+    
+    if (created_by) {
+      // Filter drugs by creator (institute)
+      query = `
+        SELECT d.*, u.name as creator_name 
+        FROM drugs d
+        JOIN users u ON d.created_by = u.id
+        WHERE d.created_by = $1 
+        ORDER BY d.name`;
+      values = [created_by];
+    } 
+    else if (req.user.role === 'institute' || req.user.role === 'pharmacy') {
+      // Get drugs for the current user
       query = `
         SELECT d.*, u.name as creator_name 
         FROM drugs d
@@ -65,7 +77,10 @@ const getDrugs = async (req, res) => {
     }
     
     const result = await req.app.locals.db.query(query, values);
-    res.json(result.rows);
+    res.json({
+      status: true,
+      drugs: result.rows
+    });
   } catch (error) {
     console.error('Error fetching drugs:', error);
     res.status(500).json({ error: 'Internal server error' });
