@@ -15,8 +15,9 @@ import PharmaciesTable from './users/PharmaciesTable';
 import UserContext from '../../../context/UserContext';
 import InstituteSettings from './InstituteSettings';
 import logo from '../../../assets/logo.jpeg';
-import OrderPage from './OrderPage';
-import SellerPage from './SellerPage';
+import OrderPage from './orders/OrderPage';
+import SellerPage from './orders/SellerPage';
+import OrderHistory from './orders/OrderHistory';
 
 const InstitutePage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -38,6 +39,8 @@ const InstitutePage = () => {
         return <DrugsTable />;
       case 'orders':
         return <OrderPage />;
+      case 'order-history':
+        return <OrderHistory />;
       case 'seller':
         return <SellerPage />;
       case 'settings':
@@ -107,6 +110,7 @@ const InstitutePage = () => {
               },
               { id: 'drugs', icon: <FaPills />, label: 'Drugs' },
               { id: 'orders', icon: <FiPackage />, label: 'Orders' },
+              { id: 'order-history', icon: <FiPackage />, label: 'Order History' },
               { id: 'seller', icon: <FiTruck />, label: 'Seller Dashboard' },
               { id: 'settings', icon: <FiSettings />, label: 'Settings' },
             ].map((item) => (

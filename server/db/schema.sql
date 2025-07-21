@@ -2,8 +2,7 @@
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL PRIMARY KEY,
   order_no TEXT NOT NULL UNIQUE,
-  status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending', 'approved', 'processing', 'shipped', 'delivered', 'cancelled')),
+  
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   recipient_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   transaction_type TEXT NOT NULL CHECK (transaction_type IN ('institute', 'manufacturer')),
@@ -42,7 +41,7 @@ CREATE TABLE IF NOT EXISTS drugs (
     exp_date DATE NOT NULL,
     price NUMERIC(10, 2) NOT NULL,
     created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-
+    manufacturer_name TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -115,11 +115,11 @@ const createOrder = async (req, res) => {
           ]
         );
 
-        // Update drug stock
-        await db.query(`UPDATE drugs SET stock = stock - $1 WHERE id = $2`, [
-          item.quantity,
-          item.drug_id,
-        ]);
+        // // Update drug stock
+        // await db.query(`UPDATE drugs SET stock = stock - $1 WHERE id = $2`, [
+        //   item.quantity,
+        //   item.drug_id,
+        // ]);
 
         totalAmount += unit_price * item.quantity;
       } else {
@@ -209,25 +209,24 @@ const getOrder = async (req, res) => {
     const order = orderResult.rows[0];
 
     // Get order items with appropriate fields based on transaction type
-    let itemsQuery;
-    if (order.transaction_type === 'institute') {
-      itemsQuery = `
-        SELECT 
-          oi.id, oi.drug_id, d.name as drug_name, 
-          oi.quantity, oi.status, u.name as seller_name
-        FROM order_items oi
-        JOIN drugs d ON oi.drug_id = d.id
-        JOIN users u ON oi.seller_id = u.id
-        WHERE oi.order_id = $1`;
-    } else {
-      itemsQuery = `
-        SELECT 
-          oi.id, oi.custom_name as drug_name, 
-          oi.manufacturer_name, oi.quantity, 
-          oi.unit_price, oi.total_price, oi.status
-        FROM order_items oi
-        WHERE oi.order_id = $1`;
-    }
+    let itemsQuery = `
+      SELECT 
+        oi.id, 
+        oi.drug_id, 
+        COALESCE(d.name, oi.custom_name) as drug_name,
+        oi.manufacturer_name,
+        oi.quantity, 
+        oi.unit_price,
+        oi.total_price,
+        oi.status,
+        oi.source_type,
+        oi.batch_no,
+        u.name as seller_name
+      FROM order_items oi
+      LEFT JOIN drugs d ON oi.drug_id = d.id
+      LEFT JOIN users u ON oi.seller_id = u.id
+      WHERE oi.order_id = $1
+    `;
 
     const itemsResult = await db.query(itemsQuery, [orderId]);
 
@@ -248,16 +247,17 @@ const getOrder = async (req, res) => {
 };
 
 // Enhanced listOrders with transaction type filtering
+// Updated listOrders function
 const listOrders = async (req, res) => {
   const db = req.app.locals.db;
   const userId = req.user.id;
-  const { status, transaction_type, page = 1, limit = 10 } = req.query;
+  const { transaction_type, page = 1, limit = 10 } = req.query;
   const offset = (page - 1) * limit;
 
   try {
     let query = `
       SELECT 
-        o.id, o.order_no, o.status, o.transaction_type,
+        o.id, o.order_no, o.transaction_type,
         o.total_amount, o.created_at, 
         u.name as recipient_name,
         COUNT(oi.id) as item_count
@@ -269,12 +269,6 @@ const listOrders = async (req, res) => {
 
     const params = [userId];
     let paramCount = 2;
-
-    if (status) {
-      query += ` AND o.status = $${paramCount}`;
-      params.push(status);
-      paramCount++;
-    }
 
     if (transaction_type) {
       query += ` AND o.transaction_type = $${paramCount}`;
@@ -299,15 +293,8 @@ const listOrders = async (req, res) => {
     `;
     const countParams = [userId];
 
-    if (status) {
-      countQuery += ' AND status = $2';
-      countParams.push(status);
-    }
-
     if (transaction_type) {
-      countQuery += status
-        ? ' AND transaction_type = $3'
-        : ' AND transaction_type = $2';
+      countQuery += ' AND transaction_type = $2';
       countParams.push(transaction_type);
     }
 
@@ -333,72 +320,10 @@ const listOrders = async (req, res) => {
   }
 };
 
-// Enhanced updateOrderStatus with transaction validation
-const updateOrderStatus = async (req, res) => {
-  const db = req.app.locals.db;
-  const { orderId } = req.params;
-  const { status } = req.body;
-  const userId = req.user.id;
 
-  if (!status) {
-    return res.status(400).json({
-      status: false,
-      message: 'Status is required',
-    });
-  }
-
-  try {
-    // Verify order exists and user has permission
-    const orderResult = await db.query(
-      `SELECT id, transaction_type, recipient_id, user_id FROM orders 
-       WHERE id = $1 AND (recipient_id = $2 OR user_id = $2 OR $3 = 'admin')`,
-      [orderId, userId, req.user.role]
-    );
-
-    if (orderResult.rows.length === 0) {
-      return res.status(404).json({
-        status: false,
-        message: 'Order not found or unauthorized',
-      });
-    }
-
-    const order = orderResult.rows[0];
-
-    // For institute-to-institute, only recipient can approve
-    if (
-      order.transaction_type === 'institute' &&
-      order.recipient_id !== userId &&
-      req.user.role !== 'admin'
-    ) {
-      return res.status(403).json({
-        status: false,
-        message: 'Only the recipient institute can approve this order',
-      });
-    }
-
-    // Update status
-    await db.query(
-      `UPDATE orders SET status = $1, updated_at = NOW() 
-       WHERE id = $2`,
-      [status, orderId]
-    );
-
-    res.json({
-      status: true,
-      message: 'Order status updated successfully',
-    });
-  } catch (err) {
-    res.status(500).json({
-      status: false,
-      message: 'Server error while updating order status',
-      error: err.message,
-    });
-  }
-};
 
 module.exports = {
   createOrder,
   getOrder,
   listOrders,
-  updateOrderStatus,
 };

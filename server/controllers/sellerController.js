@@ -9,7 +9,7 @@ const listSellerOrders = async (req, res) => {
     // First, get the orders where this seller has items or is the recipient
     let orderQuery = `
       SELECT DISTINCT
-        o.id as order_id, o.order_no, o.status as order_status,
+        o.id as order_id, o.order_no,
         o.created_at as order_date, o.total_amount,
         u.name as buyer_name, o.transaction_type,
         COUNT(oi.id) as item_count,
@@ -22,7 +22,7 @@ const listSellerOrders = async (req, res) => {
       JOIN users u ON o.user_id = u.id
       WHERE (oi.seller_id = $1 OR o.recipient_id = $1) AND o.transaction_type = 'institute'
     `;
-    
+
     const params = [sellerId];
     let paramCount = 2;
 
@@ -44,7 +44,6 @@ const listSellerOrders = async (req, res) => {
     // For each order, get the detailed items
     const ordersWithItems = await Promise.all(
       ordersResult.rows.map(async (order) => {
-        // Modified query to include items where current user is either seller or recipient
         const itemsQuery = `
           SELECT 
             oi.id, oi.drug_id, d.name as drug_name, d.batch_no,
@@ -57,12 +56,16 @@ const listSellerOrders = async (req, res) => {
           WHERE oi.order_id = $1 AND (oi.seller_id = $2 OR $3 = (SELECT recipient_id FROM orders WHERE id = $1))
           ORDER BY oi.created_at
         `;
-        
-        const itemsResult = await db.query(itemsQuery, [order.order_id, sellerId, sellerId]);
-        
+
+        const itemsResult = await db.query(itemsQuery, [
+          order.order_id,
+          sellerId,
+          sellerId,
+        ]);
+
         return {
           ...order,
-          items: itemsResult.rows
+          items: itemsResult.rows,
         };
       })
     );
@@ -75,12 +78,12 @@ const listSellerOrders = async (req, res) => {
       WHERE (oi.seller_id = $1 OR o.recipient_id = $1) AND o.transaction_type = 'institute'
     `;
     const countParams = [sellerId];
-    
+
     if (status) {
       countQuery += ' AND oi.status = $2';
       countParams.push(status);
     }
-    
+
     const countResult = await db.query(countQuery, countParams);
     const total = parseInt(countResult.rows[0].count);
 
@@ -91,16 +94,15 @@ const listSellerOrders = async (req, res) => {
         total,
         page: parseInt(page),
         limit: parseInt(limit),
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     });
-
   } catch (err) {
     console.error('Database error in listSellerOrders:', err);
     res.status(500).json({
       status: false,
       message: 'Server error while fetching seller orders',
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -112,10 +114,14 @@ const updateOrderItemStatus = async (req, res) => {
   const { status } = req.body;
   const sellerId = req.user.id;
 
-  if (!status || !['pending', 'approved', 'rejected', 'shipped'].includes(status)) {
+  if (
+    !status ||
+    !['pending', 'approved', 'rejected', 'shipped'].includes(status)
+  ) {
     return res.status(400).json({
       status: false,
-      message: 'Valid status is required (pending, approved, rejected, shipped)'
+      message:
+        'Valid status is required (pending, approved, rejected, shipped)',
     });
   }
 
@@ -134,25 +140,25 @@ const updateOrderItemStatus = async (req, res) => {
     if (itemResult.rows.length === 0) {
       return res.status(404).json({
         status: false,
-        message: 'Order item not found or unauthorized'
+        message: 'Order item not found or unauthorized',
       });
     }
 
     const item = itemResult.rows[0];
 
-    // Check status transition validity
-    if (item.current_status === 'rejected' && status !== 'rejected') {
-      return res.status(400).json({
-        status: false,
-        message: 'Cannot change status of rejected item'
-      });
-    }
+    // Check if there's sufficient stock when approving
+    if (status === 'approved') {
+      const stockCheck = await db.query(
+        `SELECT stock FROM drugs WHERE id = $1`,
+        [item.drug_id]
+      );
 
-    if (status === 'shipped' && item.current_status !== 'approved') {
-      return res.status(400).json({
-        status: false,
-        message: 'Can only ship approved items'
-      });
+      if (stockCheck.rows[0].stock < item.quantity) {
+        return res.status(400).json({
+          status: false,
+          message: 'Insufficient stock to approve this item',
+        });
+      }
     }
 
     await db.query('BEGIN');
@@ -166,18 +172,18 @@ const updateOrderItemStatus = async (req, res) => {
 
     // Handle stock updates based on status changes
     if (item.drug_id) {
-      if (status === 'approved' && item.current_status === 'pending') {
-        // Deduct stock when approving
-        await db.query(
-          `UPDATE drugs SET stock = stock - $1 WHERE id = $2`,
-          [item.quantity, item.drug_id]
-        );
+      if (status === 'approved' && item.current_status !== 'approved') {
+        // Deduct stock only when approving for the first time
+        await db.query(`UPDATE drugs SET stock = stock - $1 WHERE id = $2`, [
+          item.quantity,
+          item.drug_id,
+        ]);
       } else if (status === 'rejected' && item.current_status === 'approved') {
         // Restore stock when rejecting previously approved item
-        await db.query(
-          `UPDATE drugs SET stock = stock + $1 WHERE id = $2`,
-          [item.quantity, item.drug_id]
-        );
+        await db.query(`UPDATE drugs SET stock = stock + $1 WHERE id = $2`, [
+          item.quantity,
+          item.drug_id,
+        ]);
       }
     }
 
@@ -185,21 +191,20 @@ const updateOrderItemStatus = async (req, res) => {
 
     res.json({
       status: true,
-      message: 'Order item status updated successfully'
+      message: 'Order item status updated successfully',
     });
-
   } catch (err) {
     await db.query('ROLLBACK');
     console.error('Database error in updateOrderItemStatus:', err);
     res.status(500).json({
       status: false,
       message: 'Server error while updating order item status',
-      error: err.message
+      error: err.message,
     });
   }
 };
 
 module.exports = {
   listSellerOrders,
-  updateOrderItemStatus
+  updateOrderItemStatus,
 };
