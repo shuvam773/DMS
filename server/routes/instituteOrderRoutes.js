@@ -6,7 +6,7 @@ const {
   listOrders,
 } = require('../controllers/orderController');
 const verifyToken = require('../middlewares/authMiddleware');
-const authorizeRole = require('../middlewares/roleMiddleware');
+
 
 // Create a new order
 router.post('/', verifyToken, createOrder);

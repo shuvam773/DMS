@@ -115,12 +115,6 @@ const createOrder = async (req, res) => {
           ]
         );
 
-        // // Update drug stock
-        // await db.query(`UPDATE drugs SET stock = stock - $1 WHERE id = $2`, [
-        //   item.quantity,
-        //   item.drug_id,
-        // ]);
-
         totalAmount += unit_price * item.quantity;
       } else {
         // Manufacturer transaction

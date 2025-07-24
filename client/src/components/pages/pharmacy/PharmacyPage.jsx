@@ -1,51 +1,93 @@
-import React, { useContext, useState } from "react";
-import {
-  FiHome,
-  FiSettings,
-  FiLogOut,
-  FiChevronLeft
-} from "react-icons/fi";
-import { FaPills, FaMoneyBill } from "react-icons/fa";
-import { MdBorderColor } from "react-icons/md";
-import AnalyticsDashboard from "./AnalyticsDashboard";
-import DrugsTable from "./drugs/DrugsTable";
-import AdminSettings from "./PharmacySettings";
-import Order from "./orders/Order";
+import React, { useContext, useState } from 'react';
+import { FiHome, FiSettings, FiLogOut, FiChevronLeft, FiLoader, FiPackage } from 'react-icons/fi';
+import { FaPills, FaMoneyBill, FaHistory } from 'react-icons/fa';
+import { MdBorderColor } from 'react-icons/md';
+import AnalyticsDashboard from './AnalyticsDashboard';
+import DrugsTable from './drugs/DrugsTable';
+import AdminSettings from './PharmacySettings';
+import PharmacyOrderPage from './orders/PharmacyOrderPage';
 import UserContext from '../../../context/UserContext';
 import logo from '../../../assets/logo.jpeg';
+import ProfileModal from '../ProfileModal';
+import PharmacyOrderHistory from './orders/PharmacyOrderHistory';
 
 const PharmacyPage = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState('dashboard');
   const { user, logout } = useContext(UserContext);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileDetails, setProfileDetails] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  const fetchProfileDetails = async () => {
+    try {
+      setLoadingProfile(true);
+      const response = await fetch('http://localhost:8080/api/auth/info', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.status && data.user) {
+        setProfileDetails(data.user);
+      } else {
+        throw new Error(data.message || 'Failed to fetch profile details');
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const handleProfileClick = () => {
+    setShowProfileModal(true);
+    if (!profileDetails) {
+      fetchProfileDetails();
+    }
+  };
 
   const handleLogout = () => {
     logout();
-    window.location.href = "/login";
+    window.location.href = '/login';
   };
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case "dashboard": return <AnalyticsDashboard />;
-      case "drugs": return <DrugsTable />;
-      case "order": return <Order />;
-      case "settings": return <AdminSettings />;
-      default: return <AnalyticsDashboard />;
+      case 'dashboard':
+        return <AnalyticsDashboard />;
+      case 'drugs':
+        return <DrugsTable />;
+      case 'order':
+        return <PharmacyOrderPage />;
+      case 'order-history':
+        return <PharmacyOrderHistory />;
+      case 'settings':
+        return <AdminSettings />;
+      default:
+        return <AnalyticsDashboard />;
     }
   };
 
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <div className={`bg-indigo-800 text-white transition-all duration-300 ease-in-out 
-        ${sidebarCollapsed ? 'w-20' : 'w-64'} flex flex-col relative`}>
-        
+      <div
+        className={`bg-indigo-800 text-white transition-all duration-300 ease-in-out 
+        ${sidebarCollapsed ? 'w-20' : 'w-64'} flex flex-col relative`}
+      >
         {/* Collapse Button */}
-        <button 
+        <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="absolute -right-3 top-6 bg-white text-blue-800 rounded-full p-1 shadow-md hover:bg-gray-100"
         >
-          <FiChevronLeft className={`transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} />
+          <FiChevronLeft
+            className={`transition-transform ${
+              sidebarCollapsed ? 'rotate-180' : ''
+            }`}
+          />
         </button>
 
         {/* Logo and User Profile */}
@@ -53,9 +95,9 @@ const PharmacyPage = () => {
           {!sidebarCollapsed && (
             <>
               <div className="mb-4 flex justify-center">
-                <img 
-                  src={logo} 
-                  alt="logo" 
+                <img
+                  src={logo}
+                  alt="logo"
                   className="w-16 h-16 rounded-full object-cover border-2 border-white"
                 />
               </div>
@@ -76,34 +118,41 @@ const PharmacyPage = () => {
             </div>
           )}
         </div>
-        
+
         {/* Navigation */}
         <nav className="flex-1 px-2">
           <ul className="space-y-1">
             {[
               { id: 'dashboard', icon: <FiHome />, label: 'Dashboard' },
               { id: 'drugs', icon: <FaPills />, label: 'Drugs' },
-              { id: 'order', icon: <MdBorderColor />, label: 'Orders' },
+              { id: 'order', icon: <FiPackage />, label: 'Orders' },
+              { id: 'order-history', icon: <FaHistory />, label: 'Order History' },
               { id: 'settings', icon: <FiSettings />, label: 'Settings' },
             ].map((item) => (
               <li key={item.id}>
                 <button
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full flex items-center p-3 rounded-lg transition-colors
-                    ${activeTab === item.id ? 'bg-indigo-700 text-white' : 'text-blue-200 hover:bg-indigo-700/50'}
+                    ${
+                      activeTab === item.id
+                        ? 'bg-indigo-700 text-white'
+                        : 'text-blue-200 hover:bg-indigo-700/50'
+                    }
                     ${sidebarCollapsed ? 'justify-center' : ''}`}
                 >
                   <span className="text-lg">{item.icon}</span>
-                  {!sidebarCollapsed && <span className="ml-3">{item.label}</span>}
+                  {!sidebarCollapsed && (
+                    <span className="ml-3">{item.label}</span>
+                  )}
                 </button>
               </li>
             ))}
           </ul>
         </nav>
-        
+
         {/* Logout */}
         <div className="p-4 border-t border-blue-700">
-          <button 
+          <button
             onClick={handleLogout}
             className={`w-full flex items-center p-3 rounded-lg text-blue-200 hover:bg-indigo-700/50
               ${sidebarCollapsed ? 'justify-center' : ''}`}
@@ -113,7 +162,7 @@ const PharmacyPage = () => {
           </button>
         </div>
       </div>
-      
+
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {/* Header */}
@@ -121,18 +170,23 @@ const PharmacyPage = () => {
           <div className="flex items-center space-x-4">
             <div className="relative">
               <button className="text-gray-500 hover:text-gray-700">
-                <MdBorderColor className="text-xl" />
+                <FiPackage className="text-xl" />
               </button>
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                 3
               </span>
             </div>
-            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-              <span className="text-blue-800 font-medium">{user?.name?.charAt(0)}</span>
-            </div>
+            <button
+              onClick={handleProfileClick}
+              className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center hover:bg-indigo-200 transition-colors"
+            >
+              <span className="text-indigo-800 font-medium">
+                {user?.name?.charAt(0)}
+              </span>
+            </button>
           </div>
         </header>
-        
+
         {/* Content Area */}
         <main className="p-6">
           <div className="bg-white rounded-xl shadow-sm p-6">
@@ -140,6 +194,25 @@ const PharmacyPage = () => {
           </div>
         </main>
       </div>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <ProfileModal
+          user={profileDetails || user}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
+
+      {loadingProfile && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <div className="flex items-center">
+              <FiLoader className="animate-spin mr-2" />
+              Loading profile details...
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

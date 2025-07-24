@@ -20,7 +20,7 @@ router.post(
 router.get(
   '/',
   verifyToken,
-  authorizeRole('admin', 'institute'),
+  authorizeRole('admin', 'institute', 'pharmacy'),
   userController.getAllUsers
 );
 
@@ -28,7 +28,7 @@ router.get(
 router.get(
   '/:id',
   verifyToken,
-  authorizeRole('admin', 'institute'),
+  authorizeRole('admin', 'institute', 'pharmacy'),
   userController.getUserById
 );
 

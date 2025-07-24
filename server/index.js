@@ -8,14 +8,15 @@ const { Client } = require('pg');
 const authRoutes = require('./routes/authRoutes');
 
 const drugRoutes = require('./routes/drugRoutes');
-const orderRoutes = require('./routes/orderRoutes');
+const instituteOrderRoutes = require('./routes/instituteOrderRoutes');
 
 const usersRoutes = require('./routes/usersRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const sellerRoutes = require('./routes/sellerRoutes')
 const historyRoutes = require('./routes/historyRoutes');
+const pharmacyOrderRoutes = require('./routes/pharmacyOrderRoutes');
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT;
 
 // Middleware
 app.use(express.json());
@@ -25,12 +26,12 @@ app.use(cors());
 app.use("/api/auth", authRoutes);
 // app.use("/api/users", userRoutes);
 app.use("/api/drugs", drugRoutes);
-app.use("/api/orders", orderRoutes);
+app.use("/api/orders", instituteOrderRoutes);
 app.use('/api/seller', sellerRoutes);
 app.use('/api/history', historyRoutes);
-// app.use("/api/bills", billingRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use('/api/pharmacy', pharmacyOrderRoutes);
 
 // PostgreSQL connection
 const connectDb = new Client({

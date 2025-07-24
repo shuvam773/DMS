@@ -3,15 +3,25 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import AddDrugModal from './AddDrugModal';
 import EditDrugModal from './EditDrugModal';
-import { FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiFilter, FiX } from 'react-icons/fi';
 import { FaPills, FaExclamationTriangle } from 'react-icons/fa';
 
 const DrugsTable = () => {
   const [drugs, setDrugs] = useState([]);
+  const [filteredDrugs, setFilteredDrugs] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentDrug, setCurrentDrug] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    expiringSoon: false,
+    lowStock: false,
+    priceRange: [0, 1000],
+    name: '',
+    batchNo: ''
+  });
 
   const isExpiringSoon = (expDate) => {
     const expirationDate = new Date(expDate);
@@ -24,6 +34,10 @@ const DrugsTable = () => {
     fetchDrugs();
   }, []);
 
+  useEffect(() => {
+    applyFilters();
+  }, [drugs, searchTerm, filters]);
+
   const fetchDrugs = async () => {
     setIsLoading(true);
     try {
@@ -34,50 +48,115 @@ const DrugsTable = () => {
         },
       });
 
-      // Check if response has drugs array
       if (response.data && Array.isArray(response.data.drugs)) {
         setDrugs(response.data.drugs);
       } else {
         console.error('Invalid response format:', response.data);
         toast.error('Received invalid data format from server');
-        setDrugs([]); // Set to empty array as fallback
+        setDrugs([]);
       }
     } catch (error) {
       console.error('Error fetching drugs:', error);
       toast.error('Failed to load drugs');
-      setDrugs([]); // Set to empty array on error
+      setDrugs([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDrugAdded = (newDrug) => {
-    setDrugs((prev) => [
+  const applyFilters = () => {
+    let result = [...drugs];
+
+    // Apply search term filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(drug => 
+        drug.name.toLowerCase().includes(term) ||
+        drug.batch_no.toLowerCase().includes(term) ||
+        drug.description.toLowerCase().includes(term)
+      );
+    }
+
+    // Apply additional filters
+    if (filters.expiringSoon) {
+      result = result.filter(drug => isExpiringSoon(drug.exp_date));
+    }
+
+    if (filters.lowStock) {
+      result = result.filter(drug => drug.stock <= 10);
+    }
+
+    if (filters.priceRange) {
+      result = result.filter(drug => 
+        drug.price >= filters.priceRange[0] && 
+        drug.price <= filters.priceRange[1]
+      );
+    }
+
+    if (filters.name) {
+      result = result.filter(drug => 
+        drug.name.toLowerCase().includes(filters.name.toLowerCase())
+      );
+    }
+
+    if (filters.batchNo) {
+      result = result.filter(drug => 
+        drug.batch_no.toLowerCase().includes(filters.batchNo.toLowerCase())
+      );
+    }
+
+    setFilteredDrugs(result);
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFilters(prev => ({
       ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handlePriceRangeChange = (index, value) => {
+    const newRange = [...filters.priceRange];
+    newRange[index] = parseFloat(value) || 0;
+    setFilters(prev => ({
+      ...prev,
+      priceRange: newRange
+    }));
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      expiringSoon: false,
+      lowStock: false,
+      priceRange: [0, 1000],
+      name: '',
+      batchNo: ''
+    });
+    setSearchTerm('');
+  };
+
+  const handleDrugAdded = (newDrug) => {
+    const updatedDrugs = [
+      ...drugs,
       {
         ...newDrug,
-        price:
-          typeof newDrug.price === 'string'
-            ? parseFloat(newDrug.price)
-            : newDrug.price,
+        price: typeof newDrug.price === 'string' ? parseFloat(newDrug.price) : newDrug.price,
       },
-    ]);
+    ];
+    setDrugs(updatedDrugs);
   };
 
   const handleDrugUpdated = (updatedDrug) => {
-    setDrugs((prev) =>
-      prev.map((drug) =>
-        drug.id === updatedDrug.id
-          ? {
-              ...updatedDrug,
-              price:
-                typeof updatedDrug.price === 'string'
-                  ? parseFloat(updatedDrug.price)
-                  : updatedDrug.price,
-            }
-          : drug
-      )
+    const updatedDrugs = drugs.map((drug) =>
+      drug.id === updatedDrug.id
+        ? {
+            ...updatedDrug,
+            price: typeof updatedDrug.price === 'string' ? parseFloat(updatedDrug.price) : updatedDrug.price,
+          }
+        : drug
     );
+    setDrugs(updatedDrugs);
   };
 
   const handleEdit = (drug) => {
@@ -123,6 +202,127 @@ const DrugsTable = () => {
           </button>
         </div>
 
+        {/* Search and Filter Section */}
+        <div className="mb-6 bg-white p-4 rounded-lg shadow border border-gray-200">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="relative flex-grow">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiSearch className="text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search drugs by name, batch or description..."
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                <FiFilter className="mr-2" />
+                Filters
+              </button>
+              {(filters.expiringSoon || filters.lowStock || filters.name || filters.batchNo || 
+               filters.priceRange[0] !== 0 || filters.priceRange[1] !== 1000) && (
+                <button
+                  onClick={resetFilters}
+                  className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                >
+                  <FiX className="mr-2" />
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filter Panel */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="expiringSoon"
+                    name="expiringSoon"
+                    checked={filters.expiringSoon}
+                    onChange={handleFilterChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="expiringSoon" className="ml-2 text-sm text-gray-700">
+                    Expiring Soon (≤ 3 months)
+                  </label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="lowStock"
+                    name="lowStock"
+                    checked={filters.lowStock}
+                    onChange={handleFilterChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="lowStock" className="ml-2 text-sm text-gray-700">
+                    Low Stock (≤ 10)
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={filters.priceRange[0]}
+                      onChange={(e) => handlePriceRangeChange(0, e.target.value)}
+                      className="w-20 px-2 py-1 border border-gray-300 rounded-md"
+                      placeholder="Min"
+                    />
+                    <span>to</span>
+                    <input
+                      type="number"
+                      value={filters.priceRange[1]}
+                      onChange={(e) => handlePriceRangeChange(1, e.target.value)}
+                      className="w-20 px-2 py-1 border border-gray-300 rounded-md"
+                      placeholder="Max"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="nameFilter" className="block text-sm font-medium text-gray-700 mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    id="nameFilter"
+                    name="name"
+                    value={filters.name}
+                    onChange={handleFilterChange}
+                    className="w-full px-2 py-1 border border-gray-300 rounded-md"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="batchNoFilter" className="block text-sm font-medium text-gray-700 mb-1">
+                    Batch No
+                  </label>
+                  <input
+                    type="text"
+                    id="batchNoFilter"
+                    name="batchNo"
+                    value={filters.batchNo}
+                    onChange={handleFilterChange}
+                    className="w-full px-2 py-1 border border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -160,81 +360,89 @@ const DrugsTable = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {drugs.map((drug) => {
-                    const expiringSoon = isExpiringSoon(drug.exp_date);
-                    return (
-                      <tr
-                        key={drug.id}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td
-                          className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                            expiringSoon ? 'text-red-600' : 'text-gray-900'
-                          }`}
+                  {filteredDrugs.length > 0 ? (
+                    filteredDrugs.map((drug) => {
+                      const expiringSoon = isExpiringSoon(drug.exp_date);
+                      return (
+                        <tr
+                          key={drug.id}
+                          className="hover:bg-gray-50 transition-colors"
                         >
-                          <div className="flex items-center">
-                            {expiringSoon && (
-                              <FaExclamationTriangle className="mr-2 text-red-500" />
-                            )}
-                            {drug.name}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {drug.batch_no}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                          {drug.description}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(drug.mfg_date).toLocaleDateString()}
-                        </td>
-                        <td
-                          className={`px-6 py-4 whitespace-nowrap text-sm ${
-                            expiringSoon
-                              ? 'font-semibold text-red-600'
-                              : 'text-gray-500'
-                          }`}
-                        >
-                          {new Date(drug.exp_date).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
-                          ₹
-                          {typeof drug.price === 'number'
-                            ? drug.price.toFixed(2)
-                            : parseFloat(drug.price).toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              drug.stock > 10
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-yellow-100 text-yellow-800'
+                          <td
+                            className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                              expiringSoon ? 'text-red-600' : 'text-gray-900'
                             }`}
                           >
-                            {drug.stock} in stock
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-4">
-                            <button
-                              onClick={() => handleEdit(drug)}
-                              className="text-blue-600 hover:text-blue-900 transition-colors"
-                              title="Edit"
+                            <div className="flex items-center">
+                              {expiringSoon && (
+                                <FaExclamationTriangle className="mr-2 text-red-500" />
+                              )}
+                              {drug.name}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {drug.batch_no}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                            {drug.description}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(drug.mfg_date).toLocaleDateString()}
+                          </td>
+                          <td
+                            className={`px-6 py-4 whitespace-nowrap text-sm ${
+                              expiringSoon
+                                ? 'font-semibold text-red-600'
+                                : 'text-gray-500'
+                            }`}
+                          >
+                            {new Date(drug.exp_date).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
+                            ₹
+                            {typeof drug.price === 'number'
+                              ? drug.price.toFixed(2)
+                              : parseFloat(drug.price).toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs ${
+                                drug.stock > 10
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}
                             >
-                              <FiEdit2 className="h-5 w-5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(drug.id)}
-                              className="text-red-600 hover:text-red-900 transition-colors"
-                              title="Delete"
-                            >
-                              <FiTrash2 className="h-5 w-5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                              {drug.stock} in stock
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-4">
+                              <button
+                                onClick={() => handleEdit(drug)}
+                                className="text-blue-600 hover:text-blue-900 transition-colors"
+                                title="Edit"
+                              >
+                                <FiEdit2 className="h-5 w-5" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(drug.id)}
+                                className="text-red-600 hover:text-red-900 transition-colors"
+                                title="Delete"
+                              >
+                                <FiTrash2 className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
+                        No drugs found matching your criteria
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

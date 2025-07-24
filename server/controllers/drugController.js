@@ -48,31 +48,31 @@ const getDrugs = async (req, res) => {
     const { created_by } = req.query;
     
     if (created_by) {
-      // Filter drugs by creator (institute)
+      // Filter drugs by creator (institute) - sorted by mfg_date (oldest first)
       query = `
         SELECT d.*, u.name as creator_name 
         FROM drugs d
         JOIN users u ON d.created_by = u.id
         WHERE d.created_by = $1 
-        ORDER BY d.name`;
+        ORDER BY d.mfg_date ASC, d.name`;
       values = [created_by];
     } 
     else if (req.user.role === 'institute' || req.user.role === 'pharmacy') {
-      // Get drugs for the current user
+      // Get drugs for the current user - sorted by mfg_date (oldest first)
       query = `
         SELECT d.*, u.name as creator_name 
         FROM drugs d
         JOIN users u ON d.created_by = u.id
         WHERE d.created_by = $1 
-        ORDER BY d.name`;
+        ORDER BY d.mfg_date ASC, d.name`;
       values = [req.user.id];
     } else {
-      // Admin can see all drugs with creator names
+      // Admin can see all drugs with creator names - sorted by mfg_date (oldest first)
       query = `
         SELECT d.*, u.name as creator_name 
         FROM drugs d
         JOIN users u ON d.created_by = u.id
-        ORDER BY d.name`;
+        ORDER BY d.mfg_date ASC, d.name`;
       values = [];
     }
     

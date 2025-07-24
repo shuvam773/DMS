@@ -6,8 +6,6 @@ const UserContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Initialize user from localStorage if token exists
-  // Verify token and initialize user
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -16,7 +14,6 @@ const UserContextProvider = ({ children }) => {
         const currentTime = Date.now() / 1000;
 
         if (decoded.exp < currentTime) {
-          // Token expired
           logout();
           return;
         }
@@ -25,7 +22,9 @@ const UserContextProvider = ({ children }) => {
           name: localStorage.getItem('loggedInUser') || decoded.name || '',
           role: localStorage.getItem('userRole') || decoded.role || '',
           email: localStorage.getItem('userEmail') || decoded.email || '',
-          id: localStorage.getItem('userId') || decoded.id || decoded.id || '',
+          id: localStorage.getItem('userId') || decoded.userId || '',
+          created_by:
+            localStorage.getItem('userCreatedBy') || decoded.createdBy || null, // Fixed this line
           isAuthenticated: true,
           jwtToken: token,
         };
@@ -43,12 +42,15 @@ const UserContextProvider = ({ children }) => {
     localStorage.setItem('loggedInUser', userData.name);
     localStorage.setItem('userRole', userData.role.toLowerCase());
     localStorage.setItem('userEmail', userData.email);
-    localStorage.setItem('userId', userData.id || userData._id);
+    localStorage.setItem('userId', userData.id);
+    localStorage.setItem('userCreatedBy', userData.created_by); // Add this line
+
     setUser({
       name: userData.name,
-      role: userData.role.toLowerCase(), // Ensure lowercase
+      role: userData.role.toLowerCase(),
       email: userData.email,
       id: userData.id,
+      created_by: userData.created_by, // Add this line
       isAuthenticated: true,
       jwtToken: userData.jwtToken,
     });

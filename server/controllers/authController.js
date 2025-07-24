@@ -15,7 +15,7 @@ const register = async (req, res) => {
     state,
     postal_code,
     country = 'India',
-    license_number
+    license_number,
   } = req.body;
 
   try {
@@ -63,7 +63,7 @@ const register = async (req, res) => {
         state,
         postal_code,
         country,
-        license_number
+        license_number,
       ]
     );
 
@@ -112,6 +112,8 @@ const login = async (req, res) => {
         email: user.email,
         userId: user.id,
         role: user.role,
+        createdBy: user.created_by,
+        name: user.name
       },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
@@ -124,6 +126,8 @@ const login = async (req, res) => {
       id: user.id,
       name: user.name,
       role: user.role,
+      created_by: user.created_by,
+      email: user.email
     });
   } catch (err) {
     return res.status(500).json({ msg: err.message });
@@ -136,11 +140,11 @@ const getUser = async (req, res) => {
 
   try {
     const userId = req.user.id;
-    
+
     if (!userId) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         status: false,
-        message: 'User ID not found in token' 
+        message: 'User ID not found in token',
       });
     }
 
@@ -165,13 +169,13 @@ const getUser = async (req, res) => {
       WHERE id = $1`,
       [userId]
     );
-    
+
     const user = result.rows[0];
 
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         status: false,
-        message: 'User not found' 
+        message: 'User not found',
       });
     }
 
@@ -179,18 +183,17 @@ const getUser = async (req, res) => {
     if (req.user.role !== 'admin') {
       delete user.license_number;
       delete user.phone;
-      delete user.street;
     }
 
     res.json({
       status: true,
-      user: user
+      user: user,
     });
   } catch (err) {
-    return res.status(500).json({ 
+    return res.status(500).json({
       status: false,
       message: 'Server error while fetching user',
-      error: err.message 
+      error: err.message,
     });
   }
 };
@@ -264,15 +267,14 @@ const getAllUsers = async (req, res) => {
         total,
         page: parseInt(page),
         limit: parseInt(limit),
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     });
-
   } catch (err) {
     return res.status(500).json({
       status: false,
       message: 'Server error while fetching users',
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -281,5 +283,5 @@ module.exports = {
   register,
   login,
   getUser,
-  getAllUsers
+  getAllUsers,
 };

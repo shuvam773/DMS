@@ -64,6 +64,7 @@ const Login = () => {
           name: result.name || '',
           role: result.role || '',
           email: result.email || loginInfo.email,
+          created_by: result.created_by || '',
           id: result.id || result._id,
           isAuthenticated: true,
         });

@@ -7,8 +7,9 @@ import {
   FiChevronLeft,
   FiPackage,
   FiTruck,
+  FiLoader,
 } from 'react-icons/fi';
-import { FaPills } from 'react-icons/fa';
+import { FaHistory, FaPills } from 'react-icons/fa';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import DrugsTable from './drugs/DrugsTable';
 import PharmaciesTable from './users/PharmaciesTable';
@@ -18,11 +19,45 @@ import logo from '../../../assets/logo.jpeg';
 import OrderPage from './orders/OrderPage';
 import SellerPage from './orders/SellerPage';
 import OrderHistory from './orders/OrderHistory';
+import ProfileModal from '../ProfileModal';
 
 const InstitutePage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { user, logout } = useContext(UserContext);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileDetails, setProfileDetails] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  const fetchProfileDetails = async () => {
+    try {
+      setLoadingProfile(true);
+      const response = await fetch('http://localhost:8080/api/auth/info', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.status && data.user) {
+        setProfileDetails(data.user);
+      } else {
+        throw new Error(data.message || 'Failed to fetch profile details');
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const handleProfileClick = () => {
+    setShowProfileModal(true);
+    if (!profileDetails) {
+      fetchProfileDetails();
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -110,8 +145,12 @@ const InstitutePage = () => {
               },
               { id: 'drugs', icon: <FaPills />, label: 'Drugs' },
               { id: 'orders', icon: <FiPackage />, label: 'Orders' },
-              { id: 'order-history', icon: <FiPackage />, label: 'Order History' },
-              { id: 'seller', icon: <FiTruck />, label: 'Seller Dashboard' },
+              {
+                id: 'order-history',
+                icon: <FaHistory />,
+                label: 'Order History',
+              },
+              { id: 'seller', icon: <FiTruck />, label: 'Selles' },
               { id: 'settings', icon: <FiSettings />, label: 'Settings' },
             ].map((item) => (
               <li key={item.id}>
@@ -161,11 +200,14 @@ const InstitutePage = () => {
                 3
               </span>
             </div>
-            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+            <button
+              onClick={handleProfileClick}
+              className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center hover:bg-indigo-200 transition-colors"
+            >
               <span className="text-indigo-800 font-medium">
                 {user?.name?.charAt(0)}
               </span>
-            </div>
+            </button>
           </div>
         </header>
 
@@ -176,6 +218,25 @@ const InstitutePage = () => {
           </div>
         </main>
       </div>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <ProfileModal
+          user={profileDetails || user}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
+
+      {loadingProfile && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <div className="flex items-center">
+              <FiLoader className="animate-spin mr-2" />
+              Loading profile details...
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

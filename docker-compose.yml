@@ -1,0 +1,85 @@
+name: drug-management-system
+
+services:
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: ./server/.env
+    ports:
+      - 8080:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks:
+      - drug-management-system
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin@1234
+      POSTGRES_DB: dms
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d
+    networks:
+      - drug-management-system
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d dms" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - drug-management-system
+    ports:
+      - 5173:5173
+    depends_on:
+      - api
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - drug-management-system
+
+volumes:
+  postgres_data:
+networks:
+  drug-management-system:
+    driver: bridge
+      
+
+
+#run docker-compose up -d then goto http://localhost:5050  login to gui to edit table
+
+# In the "General" tab:
+# Name: DMS Database
+# In the "Connection" tab:
+# Host name/address: postgres
+# Port: 5432
+# Maintenance database: dms
+# Username: postgres
+# Password: admin@1234
