@@ -1,29 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { DRUG_TYPES } from '../../../../constants/drugTypes';
 
 const EditDrugModal = ({ isOpen, onClose, drug, onDrugUpdated }) => {
-  
-
   const [formData, setFormData] = useState({
-    name: drug.name,
-    description: drug.description,
-    stock: drug.stock,
-    price: drug.price,
-    batch_no: drug.batch_no || '',
-    
+    name: '',
+    description: '',
+    stock: 0,
+    price: 0,
+    batch_no: '',
+    drug_type: '',
+    category: '',
   });
 
   const [isLoading, setIsLoading] = useState(false);
 
+  // Update form data when drug prop changes
+  useEffect(() => {
+    if (drug) {
+      setFormData({
+        name: drug.name,
+        description: drug.description,
+        stock: drug.stock,
+        price: drug.price,
+        batch_no: drug.batch_no || '',
+        drug_type: drug.drug_type || '',
+        category: drug.category || '',
+      });
+    }
+  }, [drug]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Prevent changes to date fields
-    
-    
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: name === 'stock' || name === 'price' ? Number(value) : value
+      [name]: name === 'stock' || name === 'price' ? Number(value) : value,
     }));
   };
 
@@ -32,9 +44,9 @@ const EditDrugModal = ({ isOpen, onClose, drug, onDrugUpdated }) => {
     setIsLoading(true);
 
     try {
-      // Validate batch number
-      if (!formData.batch_no) {
-        toast.error('Batch number is required');
+      // Validate required fields
+      if (!formData.batch_no || !formData.drug_type) {
+        toast.error('Batch number and drug type are required');
         return;
       }
 
@@ -46,13 +58,14 @@ const EditDrugModal = ({ isOpen, onClose, drug, onDrugUpdated }) => {
           description: formData.description,
           stock: formData.stock,
           price: formData.price,
-          batch_no: formData.batch_no
-          // Don't send mfg_date and exp_date
+          batch_no: formData.batch_no,
+          drug_type: formData.drug_type,
+          category: formData.category,
         },
         {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -99,6 +112,29 @@ const EditDrugModal = ({ isOpen, onClose, drug, onDrugUpdated }) => {
             <div className="mb-4">
               <label
                 className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="drug_type"
+              >
+                Drug Type *
+              </label>
+              <select
+                id="drug_type"
+                name="drug_type"
+                required
+                value={formData.drug_type}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Drug Type</option>
+                {DRUG_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-4">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
                 htmlFor="name"
               >
                 Drug Name *
@@ -130,6 +166,27 @@ const EditDrugModal = ({ isOpen, onClose, drug, onDrugUpdated }) => {
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            <div className="mb-4">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="category"
+              >
+                Category
+              </label>
+              <select
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Category</option>
+                <option value="IPD">IPD</option>
+                <option value="OPD">OPD</option>
+                <option value="OUTREACH">OUTREACH</option>
+              </select>
             </div>
 
             <div className="mb-4">
@@ -189,8 +246,6 @@ const EditDrugModal = ({ isOpen, onClose, drug, onDrugUpdated }) => {
                 />
               </div>
             </div>
-
-            
 
             <div className="flex justify-end space-x-3 mt-6">
               <button

@@ -16,9 +16,9 @@ import DrugsTable from './drugs/DrugsTable';
 import AdminSettings from './AdminSettings';
 import UserContext from '../../../context/UserContext';
 import logo from '../../../assets/logo.jpeg';
-import OrderPage from './orders/OrderPage';
 import { MdBorderColor } from 'react-icons/md';
 import ProfileModal from '../ProfileModal';
+import AdminOrderHistory from './orders/AdminOrderHistory';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -71,8 +71,8 @@ const AdminPage = () => {
         return <InstitutesTable />;
       case 'drugs':
         return <DrugsTable />;
-      case 'orders':
-        return <OrderPage />;
+      case 'orders-history':
+        return <AdminOrderHistory />;
       case 'settings':
         return <AdminSettings />;
       default:
@@ -135,7 +135,7 @@ const AdminPage = () => {
               { id: 'dashboard', icon: <FiHome />, label: 'Dashboard' },
               { id: 'institutes', icon: <FaRegHospital />, label: 'Users' },
               { id: 'drugs', icon: <FaPills />, label: 'Drugs' },
-              { id: 'orders', icon: <MdBorderColor />, label: 'Orders' },
+              { id: 'orders-history', icon: <MdBorderColor />, label: 'Orders' },
               { id: 'settings', icon: <FiSettings />, label: 'Settings' },
             ].map((item) => (
               <li key={item.id}>

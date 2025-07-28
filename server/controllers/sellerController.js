@@ -46,7 +46,7 @@ const listSellerOrders = async (req, res) => {
       ordersResult.rows.map(async (order) => {
         const itemsQuery = `
           SELECT 
-            oi.id, oi.drug_id, d.name as drug_name, d.batch_no,
+            oi.id, oi.drug_id, d.drug_type, d.name as drug_name, d.batch_no,
             oi.quantity, oi.unit_price, oi.status,
             (oi.quantity * oi.unit_price) as total_price,
             u.name as seller_name

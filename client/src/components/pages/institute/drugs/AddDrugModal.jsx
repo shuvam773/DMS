@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { DRUG_TYPES } from '../../../../constants/drugTypes';
 
 const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
   const [formData, setFormData] = useState({
@@ -10,15 +11,17 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
     mfg_date: '',
     exp_date: '',
     price: 0,
-    batch_no: '' // Added batch_no field
+    batch_no: '',
+    drug_type: '',
+    category: '',
   });
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: name === 'stock' || name === 'price' ? Number(value) : value
+      [name]: name === 'stock' || name === 'price' ? Number(value) : value,
     }));
   };
 
@@ -33,18 +36,22 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
         return;
       }
 
-      // Validate batch number
-      if (!formData.batch_no) {
-        toast.error('Batch number is required');
+      // Validate required fields
+      if (!formData.batch_no || !formData.drug_type) {
+        toast.error('Batch number and drug type are required');
         return;
       }
 
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:8080/api/drugs', formData, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const response = await axios.post(
+        'http://localhost:8080/api/drugs',
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
 
       toast.success('Drug added successfully!');
       onDrugAdded(response.data);
@@ -56,6 +63,8 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
         exp_date: '',
         price: 0,
         batch_no: '',
+        drug_type: '',
+        category: '',
       });
       onClose();
     } catch (error) {
@@ -74,16 +83,55 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Add New Drug</h2>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="drug_type"
+              >
+                Drug Type *
+              </label>
+              <select
+                id="drug_type"
+                name="drug_type"
+                required
+                value={formData.drug_type}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Drug Type</option>
+                {DRUG_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-4">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="name"
+              >
                 Drug Name *
               </label>
               <input
@@ -98,7 +146,10 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
             </div>
 
             <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="batch_no">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="batch_no"
+              >
                 Batch Number *
               </label>
               <input
@@ -113,7 +164,32 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
             </div>
 
             <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="category"
+              >
+                Category
+              </label>
+              <select
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">N/A</option>
+                <option value="IPD">IPD</option>
+                <option value="OPD">OPD</option>
+                <option value="OUTREACH">OUTREACH</option>
+                
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="description"
+              >
                 Description
               </label>
               <textarea
@@ -128,7 +204,10 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="stock">
+                <label
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                  htmlFor="stock"
+                >
                   Stock *
                 </label>
                 <input
@@ -144,7 +223,10 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
               </div>
 
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="price">
+                <label
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                  htmlFor="price"
+                >
                   Price *
                 </label>
                 <input
@@ -163,7 +245,10 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="mfg_date">
+                <label
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                  htmlFor="mfg_date"
+                >
                   Manufacturing Date *
                 </label>
                 <input
@@ -178,7 +263,10 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
               </div>
 
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="exp_date">
+                <label
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                  htmlFor="exp_date"
+                >
                   Expiration Date *
                 </label>
                 <input

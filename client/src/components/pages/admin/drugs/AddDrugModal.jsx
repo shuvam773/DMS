@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { DRUG_TYPES } from '../../../../constants/drugTypes';
 
 const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
   const [formData, setFormData] = useState({
@@ -10,7 +11,9 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
     mfg_date: '',
     exp_date: '',
     price: 0,
-    batch_no: '', // Added batch_no field
+    batch_no: '',
+    drug_type: '',
+    category: '',
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,9 +36,9 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
         return;
       }
 
-      // Validate batch number
-      if (!formData.batch_no) {
-        toast.error('Batch number is required');
+      // Validate required fields
+      if (!formData.batch_no || !formData.drug_type) {
+        toast.error('Batch number and drug type are required');
         return;
       }
 
@@ -60,6 +63,8 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
         exp_date: '',
         price: 0,
         batch_no: '',
+        drug_type: '',
+        category: '',
       });
       onClose();
     } catch (error) {
@@ -102,6 +107,29 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
             <div className="mb-4">
               <label
                 className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="drug_type"
+              >
+                Drug Type *
+              </label>
+              <select
+                id="drug_type"
+                name="drug_type"
+                required
+                value={formData.drug_type}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Drug Type</option>
+                {DRUG_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-4">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
                 htmlFor="name"
               >
                 Drug Name *
@@ -133,6 +161,28 @@ const AddDrugModal = ({ isOpen, onClose, onDrugAdded }) => {
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            <div className="mb-4">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="category"
+              >
+                Category
+              </label>
+              <select
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">N/A</option>
+                <option value="IPD">IPD</option>
+                <option value="OPD">OPD</option>
+                <option value="OUTREACH">OUTREACH</option>
+                
+              </select>
             </div>
 
             <div className="mb-4">

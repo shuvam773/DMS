@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS drugs (
     id SERIAL PRIMARY KEY,
+    drug_type TEXT,
     name TEXT NOT NULL,
     batch_no TEXT,
     description TEXT,
@@ -35,7 +36,6 @@ CREATE TABLE IF NOT EXISTS drugs (
     exp_date DATE NOT NULL,
     price NUMERIC(10, 2) NOT NULL,
     created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    manufacturer_name TEXT,
     category TEXT CHECK (category IN ('IPD', 'OPD', 'OUTREACH', NULL)),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

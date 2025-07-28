@@ -6,7 +6,7 @@ const authorizeRole = require('../middlewares/roleMiddleware');
 
 // Create a new pharmacy order (Pharmacy only)
 router.post(
-  '/',
+  '/orders',
   verifyToken,
   authorizeRole('pharmacy'),
   pharmacyOrderController.createPharmacyOrder
