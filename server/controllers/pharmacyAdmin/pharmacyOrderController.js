@@ -163,91 +163,68 @@ const listPharmacyOrderHistory = async (req, res) => {
   const offset = (page - 1) * limit;
 
   try {
-    console.log('Starting pharmacy order history query for user:', userId);
-
-    // Base query parameters
-    let params = [userId];
-    let whereClauses = ['o.user_id = $1', "o.transaction_type = 'institute'"];
-    let paramCount = 2;
-
-    // Add filters if provided
-    if (status && status !== 'all') {
-      whereClauses.push(`oi.status = $${paramCount}`);
-      params.push(status);
-      paramCount++;
-    }
-
-    // Add search if provided
-    if (search) {
-      whereClauses.push(`
-        (o.order_no ILIKE $${paramCount} OR
-        EXISTS (
-          SELECT 1 FROM order_items oi2
-          JOIN drugs d ON oi2.drug_id = d.id
-          WHERE oi2.order_id = o.id AND 
-          d.name ILIKE $${paramCount}
-        ))
-      `);
-      params.push(`%${search}%`);
-      paramCount++;
-    }
-
-    // Build the main query
-    const whereClause =
-      whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
     // Main orders query
     const ordersQuery = `
       SELECT 
-        o.id, o.order_no,
-        o.total_amount, o.created_at, o.updated_at,
+        o.id,
+        o.order_no,
+        o.total_amount,
+        o.created_at,
+        o.updated_at,
         u.name as recipient_name,
-        COUNT(oi.id) as item_count,
-        MIN(oi.status) as overall_status
+        (
+          SELECT COUNT(*) 
+          FROM order_items oi 
+          WHERE oi.order_id = o.id
+        ) as item_count,
+        (
+          SELECT MIN(status)
+          FROM order_items oi
+          WHERE oi.order_id = o.id
+        ) as overall_status
       FROM orders o
-      JOIN order_items oi ON o.id = oi.order_id
       JOIN users u ON o.recipient_id = u.id
-      ${whereClause}
+      WHERE o.user_id = $1 AND o.transaction_type = 'institute'
       GROUP BY o.id, u.name
       ORDER BY o.created_at DESC
-      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+      LIMIT ${limit} OFFSET ${offset}
     `;
 
-    // Count query for pagination
+    // Count query
     const countQuery = `
       SELECT COUNT(DISTINCT o.id) as total
       FROM orders o
-      JOIN order_items oi ON o.id = oi.order_id
-      ${whereClause}
+      WHERE o.user_id = $1 AND o.transaction_type = 'institute'
     `;
 
-    const ordersParams = [...params, limit, offset];
+    const [ordersResult, countResult] = await Promise.all([
+      db.query(ordersQuery, [userId]),
+      db.query(countQuery, [userId])
+    ]);
 
-    console.log('Executing orders query:', ordersQuery);
-    const ordersResult = await db.query(ordersQuery, ordersParams);
-
-    console.log('Executing count query:', countQuery);
-    const countResult = await db.query(countQuery, params);
-
-    const total = parseInt(countResult.rows[0]?.total || 0);
-
-    // Get items for each order
+    // Get items for each order with simplified query
     const ordersWithItems = await Promise.all(
       ordersResult.rows.map(async (order) => {
-        const itemsResult = await db.query(
-          `SELECT 
-            oi.id, oi.drug_id, oi.quantity, 
-            oi.unit_price, oi.status,
-            d.name as drug_name, d.batch_no,
-            d.manufacturer_name
-           FROM order_items oi
-           JOIN drugs d ON oi.drug_id = d.id
-           WHERE oi.order_id = $1`,
-          [order.id]
-        );
+        const items = await db.query(`
+          SELECT 
+            oi.id,
+            oi.drug_id,
+            d.name as drug_name,
+            oi.quantity,
+            oi.unit_price,
+            oi.status,
+            oi.batch_no,
+            oi.manufacturer_name,
+            u.name as seller_name
+          FROM order_items oi
+          JOIN drugs d ON oi.drug_id = d.id
+          JOIN users u ON oi.seller_id = u.id
+          WHERE oi.order_id = $1
+        `, [order.id]);
+        
         return {
           ...order,
-          items: itemsResult.rows,
+          items: items.rows
         };
       })
     );
@@ -255,20 +232,21 @@ const listPharmacyOrderHistory = async (req, res) => {
     res.json({
       status: true,
       orders: ordersWithItems,
-      total,
+      total: parseInt(countResult.rows[0]?.total || 0),
       page: parseInt(page),
-      limit: parseInt(limit),
-    });
-  } catch (err) {
-    console.error('Error in listPharmacyOrderHistory:', {
-      message: err.message,
-      stack: err.stack,
+      limit: parseInt(limit)
     });
 
+  } catch (err) {
+    console.error('Database error:', {
+      message: err.message,
+      stack: err.stack,
+      query: err.query,
+      parameters: err.parameters
+    });
     res.status(500).json({
       status: false,
-      message: 'Server error while fetching order history',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      message: 'Server error while fetching order history'
     });
   }
 };
@@ -299,22 +277,22 @@ const getPharmacyOrderHistoryDetails = async (req, res) => {
 
     // Get order items with their statuses
     const itemsQuery = `
-      SELECT 
-        oi.id, 
-        d.name as drug_name,
-        d.batch_no,
-        oi.quantity, 
-        oi.unit_price,
-        oi.total_price,
-        oi.status,
-        u.name as seller_name,
-        d.manufacturer_name
-      FROM order_items oi
-      LEFT JOIN drugs d ON oi.drug_id = d.id
-      LEFT JOIN users u ON oi.seller_id = u.id
-      WHERE oi.order_id = $1
-      ORDER BY oi.created_at
-    `;
+  SELECT 
+    oi.id, 
+    d.name as drug_name,
+    oi.batch_no,  // Changed from d.batch_no to oi.batch_no
+    oi.quantity, 
+    oi.unit_price,
+    oi.total_price,
+    oi.status,
+    u.name as seller_name,
+    oi.manufacturer_name  // Changed from d.manufacturer_name to oi.manufacturer_name
+  FROM order_items oi
+  LEFT JOIN drugs d ON oi.drug_id = d.id
+  LEFT JOIN users u ON oi.seller_id = u.id
+  WHERE oi.order_id = $1
+  ORDER BY oi.created_at
+`;
 
     const itemsResult = await db.query(itemsQuery, [orderId]);
 

@@ -21,7 +21,7 @@ router.get(
 );
 
 router.get(
-  '/history/:orderId',
+  '/orders/history/:orderId',
   verifyToken,
   authorizeRole('pharmacy', 'institute', 'admin'),
   pharmacyOrderController.getPharmacyOrderHistoryDetails

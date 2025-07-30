@@ -149,9 +149,9 @@ const SellerPage = () => {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg shadow overflow-hidden space-y-4">
           {orders.map((order) => (
-            <div key={order.order_id} className="border-b last:border-b-0 bg-blue-200 rounded-2xl p-8">
+            <div key={order.order_id} className="border-b last:border-b-0 bg-gray-300 rounded-2xl p-8">
               <div className="p-4 flex justify-between items-center">
                 <div>
                   <h3 className="font-medium">Order #{order.order_no}</h3>

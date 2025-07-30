@@ -38,7 +38,7 @@ const createOrder = async (req, res) => {
     const orderNo = `ORD-${uuidv4().substring(0, 8).toUpperCase()}`;
     console.log('Generated order number:', orderNo);
 
-    // Create the main order record
+    // Create the main order record (without status)
     const orderResult = await db.query(
       `INSERT INTO orders (order_no, user_id, recipient_id, transaction_type, notes)
        VALUES ($1, $2, $3, $4, $5) RETURNING id`,
@@ -72,7 +72,7 @@ const createOrder = async (req, res) => {
         }
 
         const drugResult = await db.query(
-          `SELECT stock, price, created_by as seller_id FROM drugs WHERE id = $1`,
+          `SELECT stock, price, batch_no, created_by as seller_id FROM drugs WHERE id = $1`,
           [item.drug_id]
         );
 
@@ -88,36 +88,30 @@ const createOrder = async (req, res) => {
         const drug = drugResult.rows[0];
         const unit_price = drug.price;
 
-        if (drug.stock < item.quantity) {
-          console.error('Insufficient stock:', {
-            drugId: item.drug_id,
-            requested: item.quantity,
-            available: drug.stock
-          });
-          await db.query('ROLLBACK');
-          return res.status(400).json({
-            status: false,
-            message: `Insufficient stock for drug ID ${item.drug_id}`
-          });
-        }
+        // Set status based on stock availability
+        const itemStatus = drug.stock >= item.quantity ? 'pending' : 'out_of_stock';
 
         await db.query(
           `INSERT INTO order_items 
-           (order_id, drug_id, quantity, unit_price, seller_id, source_type)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
+           (order_id, drug_id, quantity, unit_price, seller_id, source_type, status, batch_no)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
           [
             orderId,
             item.drug_id,
             item.quantity,
             unit_price,
             drug.seller_id,
-            'institute'
+            'institute',
+            itemStatus,
+            drug.batch_no
           ]
         );
 
-        totalAmount += unit_price * item.quantity;
+        if (itemStatus === 'pending') {
+          totalAmount += unit_price * item.quantity;
+        }
       } else {
-        // Manufacturer transaction
+        // Manufacturer transaction - auto-approve these items
         if (!item.custom_name || !item.manufacturer_name || !item.unit_price) {
           console.error('Missing fields for manufacturer item:', item);
           await db.query('ROLLBACK');
@@ -132,21 +126,22 @@ const createOrder = async (req, res) => {
 
         await db.query(
           `INSERT INTO order_items 
-           (order_id, custom_name, manufacturer_name, quantity, unit_price, source_type)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
+           (order_id, custom_name, manufacturer_name, quantity, unit_price, source_type, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
           [
             orderId,
             item.custom_name,
             item.manufacturer_name,
             item.quantity,
             item.unit_price,
-            'manufacturer'
+            'manufacturer',
+            'approved' // Auto-approved status for manufacturer items
           ]
         );
       }
     }
 
-    // Update the order total
+    // Update the order total (only including approved/pending items)
     await db.query(`UPDATE orders SET total_amount = $1 WHERE id = $2`, [
       totalAmount,
       orderId,

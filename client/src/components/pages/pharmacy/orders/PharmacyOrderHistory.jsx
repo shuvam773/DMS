@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import UserContext from '../../../../context/UserContext';
 import { toast } from 'react-toastify';
@@ -10,7 +10,10 @@ import {
   FiClock,
   FiFilter,
   FiSearch,
+  FiDownload,
 } from 'react-icons/fi';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const PharmacyOrderHistory = () => {
   const { user } = useContext(UserContext);
@@ -19,8 +22,62 @@ const PharmacyOrderHistory = () => {
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [page, setPage] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
   const limit = 10;
+
+  // Debounce search term
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPage(1); // Reset to first page when search term changes
+    }, 500);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [searchTerm]);
+
+  const fetchOrderHistory = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      let url = `http://localhost:8080/api/pharmacy/orders/history?page=${page}&limit=${limit}`;
+
+      if (statusFilter !== 'all') {
+        url += `&status=${statusFilter}`;
+      }
+
+      if (debouncedSearchTerm) {
+        url += `&search=${debouncedSearchTerm}`;
+      }
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      }
+
+      if (data.status) {
+        setOrders(data.orders || []);
+        setTotalOrders(data.total || 0);
+      } else {
+        toast.error(data.message || 'Failed to fetch order history');
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+      toast.error(`Failed to load order history: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, limit, statusFilter, debouncedSearchTerm]);
 
   useEffect(() => {
     if (user?.role !== 'pharmacy') {
@@ -28,47 +85,103 @@ const PharmacyOrderHistory = () => {
       return;
     }
     fetchOrderHistory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, statusFilter, searchTerm, page]);
+  }, [user, fetchOrderHistory, navigate]);
 
-  const fetchOrderHistory = async () => {
-  try {
-    setLoading(true);
+  const downloadInvoice = (order) => {
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
 
-    let url = `http://localhost:8080/api/pharmacy/orders/history?page=${page}&limit=${limit}`;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(20);
+      doc.setTextColor(33, 37, 41);
+      doc.text('PHARMACY ORDER INVOICE', 105, 20, { align: 'center' });
 
-    if (statusFilter !== 'all') {
-      url += `&status=${statusFilter}`;
+      doc.setFontSize(12);
+      doc.text(`Order #: ${order.order_no}`, 20, 30);
+      doc.text(`Date: ${formatDate(order.created_at)}`, 20, 38);
+      doc.text(`Institute: ${order.recipient_name || 'N/A'}`, 20, 46);
+
+      const totalText = `Total Amount: ₹${parseFloat(order.total_amount).toFixed(2)}`;
+      doc.text(totalText, 20, 54);
+
+      doc.setDrawColor(200, 200, 200);
+      doc.line(15, 60, 195, 60);
+
+      const tableData = order.items.map((item) => [
+        item.drug_name,
+        item.quantity.toString(),
+        parseFloat(item.unit_price).toFixed(2),
+        parseFloat(item.unit_price * item.quantity).toFixed(2),
+        item.status.toUpperCase(),
+      ]);
+
+      autoTable(doc, {
+        startY: 65,
+        head: [['Item', 'Qty', 'Unit Price', 'Total', 'Status']],
+        body: tableData,
+        margin: { left: 15, right: 15 },
+        headStyles: {
+          fillColor: [13, 110, 253],
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 11,
+          halign: 'center',
+        },
+        bodyStyles: {
+          fontSize: 10,
+          cellPadding: 5,
+          valign: 'middle',
+        },
+        columnStyles: {
+          0: { cellWidth: 70, halign: 'left', fontStyle: 'bold' },
+          1: { cellWidth: 20, halign: 'center' },
+          2: { cellWidth: 30, halign: 'right', cellPadding: { right: 10 } },
+          3: { cellWidth: 30, halign: 'right', cellPadding: { right: 10 } },
+          4: { cellWidth: 30, halign: 'center' },
+        },
+        styles: {
+          overflow: 'linebreak',
+          lineWidth: 0.1,
+          lineColor: [221, 221, 221],
+        },
+      });
+
+      const batches = order.items
+        .filter((item) => item.batch_no)
+        .map((item) => `${item.drug_name}: ${item.batch_no}`);
+
+      if (batches.length > 0) {
+        const finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Batch Numbers:', 20, finalY);
+        batches.forEach((batch, index) => {
+          doc.text(batch, 25, finalY + 5 + index * 5);
+        });
+      }
+
+      const footerY =
+        doc.lastAutoTable.finalY +
+        (batches.length > 0 ? batches.length * 5 + 15 : 15);
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        `Invoice generated by: ${user.name} (${user.role})`,
+        20,
+        footerY
+      );
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, footerY + 6);
+
+      doc.save(`pharmacy_order_${order.order_no}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate invoice');
     }
-
-    if (searchTerm) {
-      url += `&search=${searchTerm}`;
-    }
-
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.status) {
-      setOrders(data.orders || []);
-    } else {
-      toast.error(data.message || 'Failed to fetch order history');
-    }
-  } catch (error) {
-    console.error('Fetch error:', error);
-    toast.error(`Failed to load order history: ${error.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -78,9 +191,7 @@ const PharmacyOrderHistory = () => {
         return 'bg-blue-100 text-blue-800';
       case 'rejected':
         return 'bg-red-100 text-red-800';
-      case 'delivered':
-        return 'bg-purple-100 text-purple-800';
-      default:
+      default: // pending
         return 'bg-yellow-100 text-yellow-800';
     }
   };
@@ -93,7 +204,7 @@ const PharmacyOrderHistory = () => {
         return <FiTruck className="mr-1" />;
       case 'rejected':
         return <FiX className="mr-1" />;
-      default:
+      default: // pending
         return <FiClock className="mr-1" />;
     }
   };
@@ -109,14 +220,20 @@ const PharmacyOrderHistory = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  const handleSearch = (e) => {
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
+  };
+
+  const handleStatusChange = (e) => {
+    setStatusFilter(e.target.value);
     setPage(1);
-    fetchOrderHistory();
   };
 
   const handleRefresh = () => {
-    setPage(1);
     fetchOrderHistory();
   };
 
@@ -127,7 +244,7 @@ const PharmacyOrderHistory = () => {
 
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <form onSubmit={handleSearch} className="flex-1">
+          <form onSubmit={handleSearchSubmit} className="flex-1">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <FiSearch className="text-gray-400" />
@@ -137,7 +254,7 @@ const PharmacyOrderHistory = () => {
                 placeholder="Search by order number, drug name..."
                 className="pl-10 w-full p-2 border rounded"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
               />
             </div>
           </form>
@@ -145,8 +262,9 @@ const PharmacyOrderHistory = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleRefresh}
-              className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
+              className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center gap-1"
             >
+              <FiClock className="text-gray-600" />
               Refresh
             </button>
             <div className="flex items-center">
@@ -154,16 +272,12 @@ const PharmacyOrderHistory = () => {
               <select
                 className="border rounded p-2"
                 value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setPage(1);
-                }}
+                onChange={handleStatusChange}
               >
                 <option value="all">All Statuses</option>
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
                 <option value="shipped">Shipped</option>
-                <option value="delivered">Delivered</option>
                 <option value="rejected">Rejected</option>
               </select>
             </div>
@@ -181,6 +295,7 @@ const PharmacyOrderHistory = () => {
           <p className="text-gray-600">
             No institute orders found
             {statusFilter !== 'all' ? ` with status: ${statusFilter}` : ''}
+            {debouncedSearchTerm ? ` matching "${debouncedSearchTerm}"` : ''}
           </p>
         </div>
       ) : (
@@ -188,7 +303,7 @@ const PharmacyOrderHistory = () => {
           {orders.map((order) => (
             <div
               key={order.id}
-              className="bg-indigo-300 rounded-lg shadow overflow-hidden border  border-gray-200"
+              className="bg-white rounded-lg shadow overflow-hidden border border-gray-200"
             >
               <div className="p-4 border-b">
                 <div className="flex justify-between items-center">
@@ -200,11 +315,13 @@ const PharmacyOrderHistory = () => {
                       {formatDate(order.created_at)}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">
-                      Institute Order
-                    </p>
-                  </div>
+                  <button
+                    onClick={() => downloadInvoice(order)}
+                    className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center gap-1 text-sm"
+                  >
+                    <FiDownload size={14} />
+                    Invoice
+                  </button>
                 </div>
                 <div className="mt-2 flex justify-between">
                   <div>
@@ -226,9 +343,9 @@ const PharmacyOrderHistory = () => {
                   Items ({order.item_count}):
                 </h4>
                 <div className="space-y-3">
-                  {order.items.map((item, index) => (
+                  {order.items.map((item) => (
                     <div
-                      key={index}
+                      key={item.id}
                       className="flex justify-between items-start p-3 bg-gray-50 rounded"
                     >
                       <div>
@@ -240,11 +357,6 @@ const PharmacyOrderHistory = () => {
                         {item.batch_no && (
                           <p className="text-xs text-gray-500">
                             Batch: {item.batch_no}
-                          </p>
-                        )}
-                        {item.seller_name && (
-                          <p className="text-xs text-gray-500">
-                            Seller: {item.seller_name}
                           </p>
                         )}
                         {item.manufacturer_name && (
@@ -274,15 +386,17 @@ const PharmacyOrderHistory = () => {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 border rounded disabled:opacity-50"
+              className="px-4 py-2 border rounded disabled:opacity-50 flex items-center gap-1"
             >
               Previous
             </button>
-            <span>Page {page}</span>
+            <span className="text-sm text-gray-600">
+              Page {page} of {Math.ceil(totalOrders / limit)}
+            </span>
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={orders.length < limit}
-              className="px-4 py-2 border rounded disabled:opacity-50"
+              className="px-4 py-2 border rounded disabled:opacity-50 flex items-center gap-1"
             >
               Next
             </button>

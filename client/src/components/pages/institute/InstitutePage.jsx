@@ -150,7 +150,7 @@ const InstitutePage = () => {
                 icon: <FaHistory />,
                 label: 'Order History',
               },
-              { id: 'seller', icon: <FiTruck />, label: 'Selles' },
+              { id: 'seller', icon: <FiTruck />, label: 'Sales' },
               { id: 'settings', icon: <FiSettings />, label: 'Settings' },
             ].map((item) => (
               <li key={item.id}>

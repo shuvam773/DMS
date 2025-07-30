@@ -331,7 +331,7 @@ const OrderHistory = () => {
                 setPage(1);
               }}
             >
-              <option value="all">All Statuses</option>
+              <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="shipped">Shipped</option>
@@ -359,7 +359,7 @@ const OrderHistory = () => {
           {orders.map((order) => (
             <div
               key={order.id}
-              className="bg-blue-200 rounded-lg shadow overflow-hidden"
+              className="bg-gray-300 rounded-lg shadow overflow-hidden"
             >
               <div className="p-4 border-b">
                 <div className="flex justify-between items-center">

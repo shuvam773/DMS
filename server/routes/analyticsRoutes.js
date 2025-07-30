@@ -6,9 +6,9 @@ const authorizeRole = require('../middlewares/roleMiddleware');
 
 router.get(
   '/stats',
-  verifyToken,
-  authorizeRole('admin', 'institute', 'pharmacy'),
-  analyticsController.getDashboardStats
+  verifyToken,analyticsController.getDashboardStats
 );
+
+router.get('/charts', verifyToken, analyticsController.getChartsData);
 
 module.exports = router;

@@ -73,12 +73,14 @@ const AdminOrderHistory = () => {
 
   const formatCurrency = (value) => {
     const num = Number(value);
-    return isNaN(num) ? '₹0.00' : num.toLocaleString('en-IN', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
+    return isNaN(num)
+      ? '₹0.00'
+      : num.toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
   };
-  
+
   const handleFilterChange = (name, value) => {
     setFilters((prev) => ({
       ...prev,
@@ -136,6 +138,8 @@ const AdminOrderHistory = () => {
         return 'Institute Order';
       case 'pharmacy':
         return 'Pharmacy Order';
+      case 'manufacturer':
+        return 'Manufacturer Order';
       default:
         return type;
     }
@@ -214,6 +218,7 @@ const AdminOrderHistory = () => {
             <option value="all">All Types</option>
             <option value="institute">Institute Orders</option>
             <option value="pharmacy">Pharmacy Orders</option>
+            <option value="manufacturer">Manufacturer Orders</option>
           </select>
         </div>
       </div>
