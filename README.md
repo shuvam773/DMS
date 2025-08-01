@@ -96,6 +96,10 @@ cd DMS
 
 ### 2. Install Dependencies
 <pre><code>
+<<<<<<< HEAD
+=======
+bash
+>>>>>>> 08290afe6ec62f08fedc8bf6734d866ed26bbc5b
 cd client
 npm install
 </code></pre>
