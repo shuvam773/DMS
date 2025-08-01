@@ -88,19 +88,22 @@ DMS/
 
 ### 1. Clone the Repository
 
-bash
+<pre><code>```bash
 git clone <repo-url>
 cd DMS
+  ```</code></pre>
 
 
 ### 2. Install Dependencies
-
+<pre><code>```bash
 bash
 cd client
 npm install
-
+ ```</code></pre>
+<pre><code>```bash
 cd ../server
 npm install
+  ```</code></pre>
 
 
 ### 3. Configure Environment
@@ -110,9 +113,9 @@ npm install
 
 ### 4. Initialize Database
 
-bash
+<pre><code>```bash
 psql -U <your_username> -d <your_db_name> -f db/schema.sql
-
+ ```</code></pre>
 
 ---
 
@@ -120,17 +123,17 @@ psql -U <your_username> -d <your_db_name> -f db/schema.sql
 
 ### Start Backend
 
-bash
+<pre><code>```bash
 cd server
 npm start
-
+ ```</code></pre>
 
 ### Start Frontend
 
-bash
+<pre><code>```bash
 cd client
 npm run dev
-
+ ```</code></pre>
 
 - Frontend: [http://localhost:5173](http://localhost:5173)  
 - Backend: [http://localhost:3000](http://localhost:3000)
@@ -149,9 +152,9 @@ npm run dev
 
 To run the full stack with Docker:
 
-bash
+<pre><code>```bash
 docker-compose up --build
-
+ ```</code></pre>
 
 This spins up:
 - Frontend
