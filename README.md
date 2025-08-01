@@ -33,7 +33,7 @@ A full-stack web application for managing drug inventories, orders, and users ac
 
 ## 📁 Project Structure
 
-<pre><code>```bash
+<pre><code>
 DMS/
 ├── client/             # Frontend (React + Vite)
 │   └── src/
@@ -53,7 +53,7 @@ DMS/
 │   └── schema.sql       # PostgreSQL schema
 │
 └── docker-compose.yml
- ```</code></pre>
+ </code></pre>
 
 ---
 
@@ -88,22 +88,22 @@ DMS/
 
 ### 1. Clone the Repository
 
-<pre><code>```bash
+<pre><code>
 git clone <repo-url>
 cd DMS
-  ```</code></pre>
+</code></pre>
 
 
 ### 2. Install Dependencies
-<pre><code>```bash
+<pre><code>
 bash
 cd client
 npm install
- ```</code></pre>
-<pre><code>```bash
+</code></pre>
+<pre><code>
 cd ../server
 npm install
-  ```</code></pre>
+</code></pre>
 
 
 ### 3. Configure Environment
@@ -113,9 +113,9 @@ npm install
 
 ### 4. Initialize Database
 
-<pre><code>```bash
+<pre><code>
 psql -U <your_username> -d <your_db_name> -f db/schema.sql
- ```</code></pre>
+</code></pre>
 
 ---
 
@@ -123,17 +123,17 @@ psql -U <your_username> -d <your_db_name> -f db/schema.sql
 
 ### Start Backend
 
-<pre><code>```bash
+<pre><code>
 cd server
 npm start
- ```</code></pre>
+</code></pre>
 
 ### Start Frontend
 
-<pre><code>```bash
+<pre><code>
 cd client
 npm run dev
- ```</code></pre>
+</code></pre>
 
 - Frontend: [http://localhost:5173](http://localhost:5173)  
 - Backend: [http://localhost:3000](http://localhost:3000)
@@ -152,9 +152,9 @@ npm run dev
 
 To run the full stack with Docker:
 
-<pre><code>```bash
+<pre><code>
 docker-compose up --build
- ```</code></pre>
+ </code></pre>
 
 This spins up:
 - Frontend
