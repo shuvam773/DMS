@@ -33,7 +33,7 @@ A full-stack web application for managing drug inventories, orders, and users ac
 
 ## 📁 Project Structure
 
-
+<pre><code>```bash
 DMS/
 ├── client/             # Frontend (React + Vite)
 │   └── src/
@@ -53,7 +53,7 @@ DMS/
 │   └── schema.sql       # PostgreSQL schema
 │
 └── docker-compose.yml
-
+ ```</code></pre>
 
 ---
 
