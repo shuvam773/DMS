@@ -59,7 +59,7 @@ DMS/
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React, Vite, CSS
+- **Frontend**: React, Vite, TailwindCSS
 - **Backend**: Node.js, Express
 - **Database**: PostgreSQL
 - **Containerization**: Docker, Docker Compose
@@ -109,8 +109,9 @@ npm install
 
 - Set up your PostgreSQL database
 
-### 🛠️ Environment Variables Create a `.env` file in the `server/` directory with the following variables: 
+### 4. Environment Variables Create a `.env` file in the `server/` directory with the following variables: 
 <pre><code>
+
 PORT=8080 
 JWT_SECRET=your_jwt_secret_here 
 
@@ -121,7 +122,7 @@ DB_PASSWORD=your_db_password_here
 DB_NAME=dms
 </code></pre>
 
-### 4. Initialize Database
+### 5. Initialize Database
 
 <pre><code>
 psql -U <your_username> -d <your_db_name> -f db/schema.sql

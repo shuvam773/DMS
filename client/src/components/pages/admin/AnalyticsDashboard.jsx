@@ -659,7 +659,7 @@ const AnalyticsDashboard = () => {
                                   );
                                   const percentage =
                                     total > 0
-                                      ? Math.round((value / total) * 100)
+                                      ? Math.round((value / total) * 1000)
                                       : 0;
                                   return `${label}: ${value} (${percentage}%)`;
                                 },
