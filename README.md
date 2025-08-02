@@ -108,7 +108,6 @@ npm install
 ### 3. Configure Environment
 
 - Set up your PostgreSQL database
-- Update connection strings in the backend (`server/config/db.js` or `.env`)
 
 ### 🛠️ Environment Variables Create a `.env` file in the `server/` directory with the following variables: 
 <pre><code>
