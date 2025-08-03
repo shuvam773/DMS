@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   unit_price DECIMAL(10,2),
   total_price DECIMAL(12,2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
   source_type TEXT CHECK (source_type IN ('institute', 'manufacturer')),
+  category TEXT CHECK (category IN ('IPD', 'OPD', 'OUTREACH', NULL)),
   batch_no TEXT,
   seller_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   status TEXT NOT NULL DEFAULT 'pending'

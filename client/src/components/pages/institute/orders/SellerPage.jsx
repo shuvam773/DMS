@@ -151,7 +151,10 @@ const SellerPage = () => {
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden space-y-4">
           {orders.map((order) => (
-            <div key={order.order_id} className="border-b last:border-b-0 bg-gray-300 rounded-2xl p-8">
+            <div
+              key={order.order_id}
+              className="border-b last:border-b-0 bg-gray-300 rounded-2xl p-8"
+            >
               <div className="p-4 flex justify-between items-center">
                 <div>
                   <h3 className="font-medium">Order #{order.order_no}</h3>
@@ -224,6 +227,15 @@ const SellerPage = () => {
                           {item.batch_no && (
                             <p className="text-xs text-gray-500">
                               Batch: {item.batch_no}
+                            </p>
+                          )}
+                          {/* Add category display */}
+                          {item.category && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Category:{' '}
+                              <span className="font-medium">
+                                {item.category}
+                              </span>
                             </p>
                           )}
                           <div className="flex items-center mt-1">

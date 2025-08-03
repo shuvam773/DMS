@@ -354,6 +354,7 @@ const PharmacyOrderHistory = () => {
                           Qty: {item.quantity} | Price: ₹
                           {parseFloat(item.unit_price).toFixed(2)}
                         </p>
+                        <span>Category: {item.category}</span>
                         {item.batch_no && (
                           <p className="text-xs text-gray-500">
                             Batch: {item.batch_no}

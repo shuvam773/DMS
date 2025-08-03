@@ -45,17 +45,18 @@ const listSellerOrders = async (req, res) => {
     const ordersWithItems = await Promise.all(
       ordersResult.rows.map(async (order) => {
         const itemsQuery = `
-          SELECT 
-            oi.id, oi.drug_id, d.drug_type, d.name as drug_name, d.batch_no,
-            oi.quantity, oi.unit_price, oi.status,
-            (oi.quantity * oi.unit_price) as total_price,
-            u.name as seller_name
-          FROM order_items oi
-          JOIN drugs d ON oi.drug_id = d.id
-          JOIN users u ON oi.seller_id = u.id
-          WHERE oi.order_id = $1 AND (oi.seller_id = $2 OR $3 = (SELECT recipient_id FROM orders WHERE id = $1))
-          ORDER BY oi.created_at
-        `;
+  SELECT 
+    oi.id, oi.drug_id, d.drug_type, d.name as drug_name, d.batch_no,
+    oi.quantity, oi.unit_price, oi.status,
+    oi.category,
+    (oi.quantity * oi.unit_price) as total_price,
+    u.name as seller_name
+  FROM order_items oi
+  JOIN drugs d ON oi.drug_id = d.id
+  JOIN users u ON oi.seller_id = u.id
+  WHERE oi.order_id = $1 AND (oi.seller_id = $2 OR $3 = (SELECT recipient_id FROM orders WHERE id = $1))
+  ORDER BY oi.created_at
+`;
 
         const itemsResult = await db.query(itemsQuery, [
           order.order_id,

@@ -122,6 +122,12 @@ const PharmacyOrderPage = () => {
     }
   };
 
+  const updateCartItemCategory = (index, category) => {
+    setCart((prevCart) =>
+      prevCart.map((item, i) => (i === index ? { ...item, category } : item))
+    );
+  };
+
   const addToCart = (drug) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.drug_id === drug.id);
@@ -138,11 +144,12 @@ const PharmacyOrderPage = () => {
             drug_id: drug.id,
             name: drug.name,
             quantity: 1,
-            price: Number(drug.price), // Convert to number here
+            price: Number(drug.price),
             seller_id: drug.created_by,
             seller_name: institute?.name,
             batch_no: drug.batch_no,
             exp_date: drug.exp_date,
+            category: null,
           },
         ];
       }
@@ -185,6 +192,16 @@ const PharmacyOrderPage = () => {
       return;
     }
 
+    const invalidItems = cart.filter(
+      (item) =>
+        !item.category || !['IPD', 'OPD', 'OUTREACH'].includes(item.category)
+    );
+
+    if (invalidItems.length > 0) {
+      toast.warning('Please select a valid category for all items');
+      return;
+    }
+
     try {
       setLoading((prev) => ({ ...prev, submitting: true }));
 
@@ -193,6 +210,7 @@ const PharmacyOrderPage = () => {
         items: cart.map((item) => ({
           drug_id: item.drug_id,
           quantity: item.quantity,
+          category: item.category,
         })),
         notes,
       };
@@ -241,9 +259,7 @@ const PharmacyOrderPage = () => {
           </div>
         ) : institute ? (
           <div className="p-3 bg-gray-50 rounded border">
-            <p className="font-medium">
-              {institute.name}
-            </p>
+            <p className="font-medium">{institute.name}</p>
             <p className="text-sm text-gray-600 mt-1">
               <span className="font-medium">License:</span>{' '}
               {institute.license_number}
@@ -390,6 +406,23 @@ const PharmacyOrderPage = () => {
                       >
                         <FiPlus size={14} />
                       </button>
+                    </div>
+                    <div className="mt-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={item.category}
+                        onChange={(e) =>
+                          updateCartItemCategory(index, e.target.value)
+                        }
+                        className="w-full p-1 text-xs border rounded"
+                      >
+                        <option value="">N/A</option>
+                        <option value="IPD">IPD</option>
+                        <option value="OPD">OPD</option>
+                        <option value="OUTREACH">OUTREACH</option>
+                      </select>
                     </div>
                   </div>
                 ))}

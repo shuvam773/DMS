@@ -6,33 +6,28 @@ const createPharmacyOrder = async (req, res) => {
   const { items, recipient_id, notes } = req.body;
   const userId = req.user.id;
 
-  console.log('Incoming pharmacy order request:', {
-    userId,
-    itemsCount: items?.length,
-    recipient_id,
-    notes,
-  });
-
   // Validate request
   if (!items || !Array.isArray(items) || items.length === 0) {
-    console.error('Validation failed: Invalid items array');
     return res.status(400).json({
       status: false,
       message: 'Items must be a non-empty array',
     });
   }
 
-  if (!recipient_id) {
-    console.error('Validation failed: Recipient ID required');
+  // Check if all items have required fields including category
+  const invalidItems = items.filter(item => 
+    !item.drug_id || !item.quantity || !item.category
+  );
+  
+  if (invalidItems.length > 0) {
     return res.status(400).json({
       status: false,
-      message: 'Recipient institute ID is required',
+      message: 'Drug ID, quantity, and category are required for all items',
     });
   }
 
   try {
     await db.query('BEGIN');
-    console.log('Transaction started');
 
     // Verify recipient is an institute
     const recipientCheck = await db.query(
@@ -49,7 +44,6 @@ const createPharmacyOrder = async (req, res) => {
     }
 
     const orderNo = `PHARM-ORD-${uuidv4().substring(0, 8).toUpperCase()}`;
-    console.log('Generated order number:', orderNo);
 
     // Create the main order record
     const orderResult = await db.query(
@@ -59,23 +53,10 @@ const createPharmacyOrder = async (req, res) => {
     );
 
     const orderId = orderResult.rows[0].id;
-    console.log('Created order with ID:', orderId);
-
     let totalAmount = 0;
 
     // Process items
     for (const [index, item] of items.entries()) {
-      console.log(`Processing item ${index + 1}:`, item);
-
-      if (!item.drug_id || !item.quantity) {
-        console.error('Missing drug_id or quantity for item:', item);
-        await db.query('ROLLBACK');
-        return res.status(400).json({
-          status: false,
-          message: 'Drug ID and quantity are required for all items',
-        });
-      }
-
       // Check drug availability at the institute
       const drugResult = await db.query(
         `SELECT id, name, stock, price FROM drugs 
@@ -84,7 +65,6 @@ const createPharmacyOrder = async (req, res) => {
       );
 
       if (drugResult.rows.length === 0) {
-        console.error('Drug not found at institute:', item.drug_id);
         await db.query('ROLLBACK');
         return res.status(404).json({
           status: false,
@@ -96,11 +76,6 @@ const createPharmacyOrder = async (req, res) => {
       const unit_price = drug.price;
 
       if (drug.stock < item.quantity) {
-        console.error('Insufficient stock:', {
-          drugId: item.drug_id,
-          requested: item.quantity,
-          available: drug.stock,
-        });
         await db.query('ROLLBACK');
         return res.status(400).json({
           status: false,
@@ -108,11 +83,11 @@ const createPharmacyOrder = async (req, res) => {
         });
       }
 
-      // Create order item (status will be pending by default)
+      // Create order item with category
       await db.query(
         `INSERT INTO order_items 
-         (order_id, drug_id, quantity, unit_price, seller_id, source_type)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
+         (order_id, drug_id, quantity, unit_price, seller_id, source_type, category)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           orderId,
           item.drug_id,
@@ -120,6 +95,7 @@ const createPharmacyOrder = async (req, res) => {
           unit_price,
           recipient_id,
           'institute',
+          item.category
         ]
       );
 
@@ -133,7 +109,6 @@ const createPharmacyOrder = async (req, res) => {
     ]);
 
     await db.query('COMMIT');
-    console.log('Transaction committed successfully');
 
     res.status(201).json({
       status: true,
@@ -145,13 +120,11 @@ const createPharmacyOrder = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Database error:', err);
     await db.query('ROLLBACK');
     res.status(500).json({
       status: false,
       message: 'Server error while creating order',
       error: err.message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
     });
   }
 };
@@ -275,24 +248,25 @@ const getPharmacyOrderHistoryDetails = async (req, res) => {
 
     const order = orderResult.rows[0];
 
-    // Get order items with their statuses
+    // Get order items with their statuses and category
     const itemsQuery = `
-  SELECT 
-    oi.id, 
-    d.name as drug_name,
-    oi.batch_no,  // Changed from d.batch_no to oi.batch_no
-    oi.quantity, 
-    oi.unit_price,
-    oi.total_price,
-    oi.status,
-    u.name as seller_name,
-    oi.manufacturer_name  // Changed from d.manufacturer_name to oi.manufacturer_name
-  FROM order_items oi
-  LEFT JOIN drugs d ON oi.drug_id = d.id
-  LEFT JOIN users u ON oi.seller_id = u.id
-  WHERE oi.order_id = $1
-  ORDER BY oi.created_at
-`;
+      SELECT 
+        oi.id, 
+        d.name as drug_name,
+        oi.batch_no,
+        oi.quantity, 
+        oi.unit_price,
+        oi.total_price,
+        oi.status,
+        oi.category,
+        u.name as seller_name,
+        oi.manufacturer_name
+      FROM order_items oi
+      LEFT JOIN drugs d ON oi.drug_id = d.id
+      LEFT JOIN users u ON oi.seller_id = u.id
+      WHERE oi.order_id = $1
+      ORDER BY oi.created_at
+    `;
 
     const itemsResult = await db.query(itemsQuery, [orderId]);
 
