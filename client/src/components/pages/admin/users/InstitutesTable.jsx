@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import api from '../../../../api/api'; 
 import UserContext from '../../../../context/UserContext';
 import AddInstitute from './AddInstitute';
 import EditInstitute from './EditInstitute';
@@ -32,15 +32,12 @@ const InstituteTable = () => {
   const fetchInstitutes = async (page = 1, limit = 10, search = '') => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:8080/api/users`, {
+      const response = await api.get('/users', {
         params: {
           page,
           limit,
           search,
-        },
-        headers: {
-          Authorization: `Bearer ${user.jwtToken}`,
-        },
+        }
       });
 
       setInstitutes(response.data.institutes);
@@ -72,12 +69,7 @@ const InstituteTable = () => {
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`http://localhost:8080/api/users/${id}`, {
-        headers: {
-          Authorization: `Bearer ${user.jwtToken}`,
-        },
-      });
-
+      await api.delete(`/users/${id}`);
       toast.success('Institute deleted successfully');
       fetchInstitutes(pagination.page, pagination.limit, searchTerm);
     } catch (error) {

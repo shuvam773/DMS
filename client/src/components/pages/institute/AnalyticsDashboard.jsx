@@ -4,21 +4,20 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiPieChart,
-  FiUsers
+  FiUsers,
 } from 'react-icons/fi';
 import {
   FaPills,
   FaExclamationTriangle,
   FaHospital,
   FaClinicMedical,
-  FaGlobeAmericas
+  FaGlobeAmericas,
 } from 'react-icons/fa';
 import { Bar, Pie, Line } from 'react-chartjs-2';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
-import axios from 'axios';
 import UserContext from '../../../context/UserContext';
-import Chart from 'chart.js/auto';
+import api from '../../../api/api';
 
 const AnalyticsDashboard = () => {
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -40,7 +39,7 @@ const AnalyticsDashboard = () => {
     categoryDistribution: null,
     stockLevels: null,
     orderStatuses: null,
-    loading: true
+    loading: true,
   });
 
   const [expiringDrugs, setExpiringDrugs] = useState([]);
@@ -57,55 +56,41 @@ const AnalyticsDashboard = () => {
     const fetchData = async () => {
       try {
         // Fetch stats
-        const statsResponse = await axios.get(
-          'http://localhost:8080/api/analytics/stats',
-          {
-            headers: { Authorization: `Bearer ${user.jwtToken}` },
-          }
-        );
-        
+        const statsResponse = await api.get('/analytics/stats');
+
         setStats({
           ...statsResponse.data.stats,
           loading: false,
         });
 
         // Fetch charts data
-        const chartsResponse = await axios.get(
-          'http://localhost:8080/api/analytics/charts',
-          {
-            headers: { Authorization: `Bearer ${user.jwtToken}` },
-          }
-        );
-        
+        const chartsResponse = await api.get('/analytics/charts');
+
         setChartsData({
           categoryDistribution: chartsResponse.data.charts.categoryDistribution,
           stockLevels: chartsResponse.data.charts.stockLevels,
           orderStatuses: chartsResponse.data.charts.orderStatuses,
-          loading: false
+          loading: false,
         });
 
         setLastUpdated(new Date());
       } catch (error) {
         console.error('Error fetching data:', error);
-        setStats(prev => ({ ...prev, loading: false }));
-        setChartsData(prev => ({ ...prev, loading: false }));
+        setStats((prev) => ({ ...prev, loading: false }));
+        setChartsData((prev) => ({ ...prev, loading: false }));
       }
     };
 
     const fetchExpiringDrugs = async () => {
       try {
         setDrugsLoading(true);
-        const response = await axios.get(
-          'http://localhost:8080/api/drugs/expiring',
-          {
-            headers: { Authorization: `Bearer ${user.jwtToken}` },
-            params: {
-              days: pagination.daysThreshold,
-              page: pagination.page,
-              limit: pagination.limit,
-            },
-          }
-        );
+        const response = await api.get('/drugs/expiring', {
+          params: {
+            days: pagination.daysThreshold,
+            page: pagination.page,
+            limit: pagination.limit,
+          },
+        });
 
         setExpiringDrugs(response.data.drugs);
         setPagination({
@@ -114,7 +99,10 @@ const AnalyticsDashboard = () => {
           totalPages: response.data.totalPages,
         });
       } catch (error) {
-        console.error('Failed to fetch drugs:', error.response?.data || error.message);
+        console.error(
+          'Failed to fetch drugs:',
+          error.response?.data || error.message
+        );
       } finally {
         setDrugsLoading(false);
       }
@@ -124,15 +112,10 @@ const AnalyticsDashboard = () => {
       fetchData();
       fetchExpiringDrugs();
     }
-  }, [
-    user,
-    pagination.page,
-    pagination.daysThreshold,
-    pagination.limit,
-  ]);
+  }, [user, pagination.page, pagination.daysThreshold, pagination.limit]);
 
   const handleDaysChange = (days) => {
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
       daysThreshold: days,
       page: 1,
@@ -140,7 +123,7 @@ const AnalyticsDashboard = () => {
   };
 
   const handlePageChange = (newPage) => {
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
       page: newPage,
     }));
@@ -163,12 +146,7 @@ const AnalyticsDashboard = () => {
           '#F59E0B', // Yellow
           '#9CA3AF', // Gray
         ],
-        hoverBackgroundColor: [
-          '#2563EB',
-          '#059669',
-          '#D97706',
-          '#6B7280',
-        ],
+        hoverBackgroundColor: ['#2563EB', '#059669', '#D97706', '#6B7280'],
       },
     ],
   };
@@ -187,11 +165,7 @@ const AnalyticsDashboard = () => {
           '#F59E0B', // Yellow
           '#10B981', // Green
         ],
-        hoverBackgroundColor: [
-          '#DC2626',
-          '#D97706',
-          '#059669',
-        ],
+        hoverBackgroundColor: ['#DC2626', '#D97706', '#059669'],
       },
     ],
   };
@@ -215,16 +189,31 @@ const AnalyticsDashboard = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs selectedIndex={activeTab} onSelect={index => setActiveTab(index)}>
+        <Tabs
+          selectedIndex={activeTab}
+          onSelect={(index) => setActiveTab(index)}
+        >
           <TabList className="flex border-b border-gray-200">
             <Tab className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
-              <div className={`flex items-center ${activeTab === 0 ? 'text-blue-600 border-b-2 border-blue-500' : ''}`}>
+              <div
+                className={`flex items-center ${
+                  activeTab === 0
+                    ? 'text-blue-600 border-b-2 border-blue-500'
+                    : ''
+                }`}
+              >
                 <FiPieChart className="mr-2" /> Overview
               </div>
             </Tab>
-            
+
             <Tab className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
-              <div className={`flex items-center ${activeTab === 1 ? 'text-blue-600 border-b-2 border-blue-500' : ''}`}>
+              <div
+                className={`flex items-center ${
+                  activeTab === 1
+                    ? 'text-blue-600 border-b-2 border-blue-500'
+                    : ''
+                }`}
+              >
                 <FaExclamationTriangle className="mr-2" /> Expiring Drugs
               </div>
             </Tab>
@@ -237,7 +226,7 @@ const AnalyticsDashboard = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard
                   icon={<FiUsers className="w-6 h-6" />}
-                  title="Pharmacies"
+                  title="Dispensaries"
                   value={stats.totalPharmacies}
                   loading={stats.loading}
                   color="purple"
@@ -276,7 +265,9 @@ const AnalyticsDashboard = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Drug Distribution Chart */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Drug Distribution by Category</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                    Drug Distribution by Category
+                  </h3>
                   {chartsData.loading ? (
                     <div className="flex justify-center items-center h-64">
                       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -294,16 +285,21 @@ const AnalyticsDashboard = () => {
                             },
                             tooltip: {
                               callbacks: {
-                                label: function(context) {
+                                label: function (context) {
                                   const label = context.label || '';
                                   const value = context.raw || 0;
-                                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                  const percentage = Math.round((value / total) * 100);
+                                  const total = context.dataset.data.reduce(
+                                    (a, b) => a + b,
+                                    0
+                                  );
+                                  const percentage = Math.round(
+                                    (value / total) * 100
+                                  );
                                   return `${label}: ${value} (${percentage}%)`;
-                                }
-                              }
-                            }
-                          }
+                                },
+                              },
+                            },
+                          },
                         }}
                       />
                     </div>
@@ -312,7 +308,9 @@ const AnalyticsDashboard = () => {
 
                 {/* Stock Levels Chart */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Stock Levels</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                    Stock Levels
+                  </h3>
                   {chartsData.loading ? (
                     <div className="flex justify-center items-center h-64">
                       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -326,23 +324,23 @@ const AnalyticsDashboard = () => {
                           maintainAspectRatio: false,
                           scales: {
                             y: {
-                              beginAtZero: true
-                            }
+                              beginAtZero: true,
+                            },
                           },
                           plugins: {
                             legend: {
-                              display: false
+                              display: false,
                             },
                             tooltip: {
                               callbacks: {
-                                label: function(context) {
+                                label: function (context) {
                                   const label = context.label || '';
                                   const value = context.raw || 0;
                                   return `${label}: ${value} drugs`;
-                                }
-                              }
-                            }
-                          }
+                                },
+                              },
+                            },
+                          },
                         }}
                       />
                     </div>
@@ -364,7 +362,9 @@ const AnalyticsDashboard = () => {
                         Drugs Expiring Within
                         <select
                           value={pagination.daysThreshold}
-                          onChange={(e) => handleDaysChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            handleDaysChange(Number(e.target.value))
+                          }
                           className="ml-3 border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
                         >
                           <option value={10}>10 Days</option>
@@ -376,7 +376,10 @@ const AnalyticsDashboard = () => {
                     </div>
                     <div className="text-sm text-gray-500">
                       Showing {(pagination.page - 1) * pagination.limit + 1}-
-                      {Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
+                      {Math.min(
+                        pagination.page * pagination.limit,
+                        pagination.total
+                      )}{' '}
                       of {pagination.total} drugs
                     </div>
                   </div>
@@ -499,15 +502,21 @@ const AnalyticsDashboard = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex-1 flex justify-between sm:hidden">
                             <button
-                              onClick={() => handlePageChange(pagination.page - 1)}
+                              onClick={() =>
+                                handlePageChange(pagination.page - 1)
+                              }
                               disabled={pagination.page === 1}
                               className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               Previous
                             </button>
                             <button
-                              onClick={() => handlePageChange(pagination.page + 1)}
-                              disabled={pagination.page >= pagination.totalPages}
+                              onClick={() =>
+                                handlePageChange(pagination.page + 1)
+                              }
+                              disabled={
+                                pagination.page >= pagination.totalPages
+                              }
                               className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               Next
@@ -517,7 +526,9 @@ const AnalyticsDashboard = () => {
                             <div>
                               <p className="text-sm text-gray-700">
                                 Page{' '}
-                                <span className="font-medium">{pagination.page}</span>{' '}
+                                <span className="font-medium">
+                                  {pagination.page}
+                                </span>{' '}
                                 of{' '}
                                 <span className="font-medium">
                                   {pagination.totalPages}
@@ -543,7 +554,9 @@ const AnalyticsDashboard = () => {
                                   />
                                 </button>
                                 {Array.from(
-                                  { length: Math.min(5, pagination.totalPages) },
+                                  {
+                                    length: Math.min(5, pagination.totalPages),
+                                  },
                                   (_, i) => {
                                     let pageNum;
                                     if (pagination.totalPages <= 5) {
@@ -561,7 +574,9 @@ const AnalyticsDashboard = () => {
                                     return (
                                       <button
                                         key={pageNum}
-                                        onClick={() => handlePageChange(pageNum)}
+                                        onClick={() =>
+                                          handlePageChange(pageNum)
+                                        }
                                         className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                                           pagination.page === pageNum
                                             ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
@@ -577,7 +592,9 @@ const AnalyticsDashboard = () => {
                                   onClick={() =>
                                     handlePageChange(pagination.page + 1)
                                   }
-                                  disabled={pagination.page >= pagination.totalPages}
+                                  disabled={
+                                    pagination.page >= pagination.totalPages
+                                  }
                                   className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <span className="sr-only">Next</span>

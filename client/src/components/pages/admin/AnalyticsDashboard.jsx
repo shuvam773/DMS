@@ -20,9 +20,8 @@ import {
 import { Bar, Pie, Line } from 'react-chartjs-2';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
-import axios from 'axios';
 import UserContext from '../../../context/UserContext';
-import Chart from 'chart.js/auto';
+import api from '../../../api/api';
 
 const AnalyticsDashboard = () => {
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -66,26 +65,14 @@ const AnalyticsDashboard = () => {
     const fetchData = async () => {
       try {
         // Fetch stats
-        const statsResponse = await axios.get(
-          'http://localhost:8080/api/analytics/stats',
-          {
-            headers: { Authorization: `Bearer ${user.jwtToken}` },
-          }
-        );
-
+        const statsResponse = await api.get('/analytics/stats');
         setStats({
           ...statsResponse.data.stats,
           loading: false,
         });
 
         // Fetch charts data
-        const chartsResponse = await axios.get(
-          'http://localhost:8080/api/analytics/charts',
-          {
-            headers: { Authorization: `Bearer ${user.jwtToken}` },
-          }
-        );
-
+        const chartsResponse = await api.get('/analytics/charts');
         setChartsData({
           userRoles: chartsResponse.data.charts.userRoles,
           drugTypes: chartsResponse.data.charts.drugTypes,
@@ -107,17 +94,13 @@ const AnalyticsDashboard = () => {
     const fetchExpiringDrugs = async () => {
       try {
         setDrugsLoading(true);
-        const response = await axios.get(
-          'http://localhost:8080/api/drugs/expiring',
-          {
-            headers: { Authorization: `Bearer ${user.jwtToken}` },
-            params: {
-              days: pagination.daysThreshold,
-              page: pagination.page,
-              limit: pagination.limit,
-            },
-          }
-        );
+        const response = await api.get('/drugs/expiring', {
+          params: {
+            days: pagination.daysThreshold,
+            page: pagination.page,
+            limit: pagination.limit,
+          },
+        });
 
         setExpiringDrugs(response.data.drugs);
         setPagination({
@@ -158,7 +141,7 @@ const AnalyticsDashboard = () => {
 
   // Prepare chart data
   const userRolesData = {
-    labels: ['Admins', 'Institutes', 'Pharmacies'],
+    labels: ['Admins', 'Institutes', 'Dispensaries'],
     datasets: [
       {
         data: [
@@ -364,7 +347,7 @@ const AnalyticsDashboard = () => {
                 />
                 <StatCard
                   icon={<FiShoppingBag className="w-6 h-6" />}
-                  title="Pharmacies"
+                  title="Dispensaries"
                   value={stats.totalPharmacies}
                   loading={stats.loading}
                   color="purple"

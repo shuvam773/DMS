@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import UserContext from '../../context/UserContext';
 import backgroundImage from '../../assets/logo.jpeg';
+import api from '../../api/api';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -45,33 +46,22 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginInfo),
-      });
+      const response = await api.post('/auth/login', loginInfo); // Using the api instance
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Login failed');
-      }
-
-      if (result.jwtToken) {
+      if (response.data.jwtToken) {
         // Store token and user info
         login({
-          jwtToken: result.jwtToken,
-          name: result.name || '',
-          role: result.role || '',
-          email: result.email || loginInfo.email,
-          created_by: result.created_by || '',
-          id: result.id || result._id,
+          jwtToken: response.data.jwtToken,
+          name: response.data.name || '',
+          role: response.data.role || '',
+          email: response.data.email || loginInfo.email,
+          created_by: response.data.created_by || '',
+          id: response.data.id || response.data._id,
           isAuthenticated: true,
         });
-        
 
         // Navigate according to role
-        switch (result.role.toLowerCase()) {
+        switch (response.data.role.toLowerCase()) {
           case 'admin':
             navigate('/admin');
             break;
@@ -82,14 +72,14 @@ const Login = () => {
             navigate('/pharmacy');
             break;
           default:
-            console.log('Unknown role:', result.user?.role);
+            console.log('Unknown role:', response.data.role);
             navigate('/unauthorized');
         }
       } else {
-        throw new Error(result.message || 'Login failed');
+        throw new Error(response.data.message || 'Login failed');
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -100,21 +90,16 @@ const Login = () => {
       <div
         className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div>
+            <img src={backgroundImage} alt="logo" className='w-32 h-32 mx-auto' />
+          </div>
           <h1 className="text-center text-3xl font-extrabold text-gray-900">
             Login
           </h1>
         </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10"
-          style={{
-          backgroundImage: `linear-gradient(rgba(255, 255, 255,0.1), rgba(255,255,255,0.7)), url(${backgroundImage})`,
-          backgroundSize: '280px',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-      
-        }}
-          >
+        <div className="mt-4 sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
             {error && (
               <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
                 {error}

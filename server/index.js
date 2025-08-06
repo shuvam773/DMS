@@ -17,6 +17,7 @@ const historyRoutes = require('./routes/historyRoutes');
 const pharmacyOrderRoutes = require('./routes/pharmacyOrderRoutes');
 const adminOrderRoutes = require('./routes/adminOrderRoutes');
 const resetProfileRoutes = require('./routes/resetProfileRoutes');
+const chatbotRoutes = require('./routes/chatbotRoutes');
 
 const PORT = process.env.PORT;
 
@@ -36,6 +37,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use('/api/pharmacy', pharmacyOrderRoutes);
 app.use("/api/admin/orders", adminOrderRoutes);
 app.use("/api/reset", resetProfileRoutes)
+app.use("/api/chatbot", chatbotRoutes);
 
 // PostgreSQL connection
 const connectDb = new Client({

@@ -1,10 +1,10 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, {  useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import UserContext from '../../../../context/UserContext';
-import axios from 'axios';
+import api from '../../../../api/api'; // Import the api instance
 
 const EditPharmacy = ({ isOpen, onClose, onSave, pharmacy }) => {
-  const { user } = useContext(UserContext);
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -51,18 +51,12 @@ const EditPharmacy = ({ isOpen, onClose, onSave, pharmacy }) => {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.put(
-        `http://localhost:8080/api/users/pharmacy/${pharmacy.id}`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${user.jwtToken}`,
-          },
-        }
+      const response = await api.put(
+        `/users/pharmacy/${pharmacy.id}`,
+        formData
       );
 
-      toast.success('pharmacy updated successfully!');
+      toast.success('Dispensary updated successfully!');
       onSave(response.data.pharmacy);
       onClose();
     } catch (error) {
@@ -70,7 +64,7 @@ const EditPharmacy = ({ isOpen, onClose, onSave, pharmacy }) => {
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
-        'Failed to update pharmacy';
+        'Failed to update dispensary';
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -84,7 +78,7 @@ const EditPharmacy = ({ isOpen, onClose, onSave, pharmacy }) => {
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">Edit pharmacy</h3>
+            <h3 className="text-xl font-bold">Edit Dispensary</h3>
             <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
@@ -242,7 +236,7 @@ const EditPharmacy = ({ isOpen, onClose, onSave, pharmacy }) => {
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
-                  <option value="pharmacy">Pharmacy</option>
+                  <option value="pharmacy">Dispensary</option>
                 </select>
               </div>
 
@@ -276,7 +270,7 @@ const EditPharmacy = ({ isOpen, onClose, onSave, pharmacy }) => {
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Updating...' : 'Update pharmacy'}
+                {isSubmitting ? 'Updating...' : 'Update Dispensary'}
               </button>
             </div>
           </form>

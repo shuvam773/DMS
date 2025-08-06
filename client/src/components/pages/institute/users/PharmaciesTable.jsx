@@ -1,6 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 import UserContext from '../../../../context/UserContext';
 import AddPharmacy from './AddPharmacy';
 import EditPharmacy from './EditPharmacy';
@@ -13,6 +12,7 @@ import {
   FiSearch,
 } from 'react-icons/fi';
 import { FaSpinner } from 'react-icons/fa';
+import api from '../../../../api/api';
 
 const PharmacyTable = () => {
   const { user } = useContext(UserContext);
@@ -32,19 +32,13 @@ const PharmacyTable = () => {
   const fetchPharmacies = async (page = 1, limit = 10, search = '') => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `http://localhost:8080/api/users/pharmacy/all`,
-        {
-          params: {
-            page,
-            limit,
-            search,
-          },
-          headers: {
-            Authorization: `Bearer ${user.jwtToken}`,
-          },
-        }
-      );
+      const response = await api.get('/users/pharmacy/all', {
+        params: {
+          page,
+          limit,
+          search,
+        },
+      });
 
       setPharmacies(response.data.users || []);
       setPagination({
@@ -55,7 +49,7 @@ const PharmacyTable = () => {
       });
     } catch (error) {
       toast.error(
-        error.response?.data?.message || 'Failed to fetch pharmacies'
+        error.response?.data?.message || 'Failed to fetch dispensaries'
       );
     } finally {
       setLoading(false);
@@ -70,22 +64,17 @@ const PharmacyTable = () => {
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
-      'Are you sure you want to delete this pharmacy? This action cannot be undone.'
+      'Are you sure you want to delete this Dispensary? This action cannot be undone.'
     );
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`http://localhost:8080/api/users/pharmacy/${id}`, {
-        headers: {
-          Authorization: `Bearer ${user.jwtToken}`,
-        },
-      });
-
-      toast.success('Pharmacy deleted successfully');
+      await api.delete(`/users/pharmacy/${id}`);
+      toast.success('Dispensary deleted successfully');
       fetchPharmacies(pagination.page, pagination.limit, searchTerm);
     } catch (error) {
       toast.error(
-        error.response?.data?.message || 'Failed to delete pharmacy'
+        error.response?.data?.message || 'Failed to delete dispensary'
       );
     }
   };
@@ -109,7 +98,6 @@ const PharmacyTable = () => {
     setIsEditModalOpen(false);
   };
 
-
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -117,12 +105,14 @@ const PharmacyTable = () => {
           <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
             <div>
               <h2 className="text-2xl font-bold text-gray-800">
-                {user.role === 'institute' ? 'Your Pharmacies' : 'Pharmacies Management'}
+                {user.role === 'institute'
+                  ? 'Dispensaries'
+                  : 'Dispensary Management'}
               </h2>
               <p className="text-sm text-gray-600">
-                {user.role === 'institute' 
-                  ? 'Manage pharmacies you have registered' 
-                  : 'Manage all registered pharmacies'}
+                {user.role === 'institute'
+                  ? 'Manage dispensary you have registered'
+                  : 'Manage all registered dispensary'}
               </p>
             </div>
 
@@ -154,7 +144,7 @@ const PharmacyTable = () => {
                   className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
                 >
                   <FiPlus className="mr-2" />
-                  Add New Pharmacy
+                  Add New Dispensary
                 </button>
               )}
             </div>
@@ -192,7 +182,8 @@ const PharmacyTable = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Created At
                         </th>
-                        {(user?.role === 'admin' || user?.role === 'institute') && (
+                        {(user?.role === 'admin' ||
+                          user?.role === 'institute') && (
                           <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Actions
                           </th>
@@ -242,35 +233,36 @@ const PharmacyTable = () => {
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                              {new Date(pharmacy.created_at).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                              })}
+                              {new Date(pharmacy.created_at).toLocaleDateString(
+                                'en-US',
+                                {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                }
+                              )}
                             </td>
                             {user?.role === 'institute' && (
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                
-                                  <div className="flex justify-end space-x-3">
-                                    <button
-                                      onClick={() => {
-                                        setCurrentPharmacy(pharmacy);
-                                        setIsEditModalOpen(true);
-                                      }}
-                                      className="text-blue-600 hover:text-blue-900 transition-colors"
-                                      title="Edit"
-                                    >
-                                      <FiEdit className="h-5 w-5" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDelete(pharmacy.id)}
-                                      className="text-red-600 hover:text-red-900 transition-colors"
-                                      title="Delete"
-                                    >
-                                      <FiTrash2 className="h-5 w-5" />
-                                    </button>
-                                  </div>
-                                
+                                <div className="flex justify-end space-x-3">
+                                  <button
+                                    onClick={() => {
+                                      setCurrentPharmacy(pharmacy);
+                                      setIsEditModalOpen(true);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-900 transition-colors"
+                                    title="Edit"
+                                  >
+                                    <FiEdit className="h-5 w-5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(pharmacy.id)}
+                                    className="text-red-600 hover:text-red-900 transition-colors"
+                                    title="Delete"
+                                  >
+                                    <FiTrash2 className="h-5 w-5" />
+                                  </button>
+                                </div>
                               </td>
                             )}
                           </tr>
@@ -278,28 +270,35 @@ const PharmacyTable = () => {
                       ) : (
                         <tr>
                           <td
-                            colSpan={(user?.role === 'admin' || user?.role === 'institute') ? 8 : 7}
+                            colSpan={
+                              user?.role === 'admin' ||
+                              user?.role === 'institute'
+                                ? 8
+                                : 7
+                            }
                             className="px-6 py-8 text-center"
                           >
                             <div className="flex flex-col items-center justify-center">
                               <FiSearch className="h-12 w-12 text-gray-400 mb-2" />
                               <h3 className="text-lg font-medium text-gray-900">
-                                No pharmacies found
+                                No Dispensary found
                               </h3>
                               <p className="text-sm text-gray-500">
                                 {searchTerm
                                   ? 'Try adjusting your search'
-                                  : 'Add a new pharmacy to get started'}
+                                  : 'Add a new dispensary to get started'}
                               </p>
-                              {(user?.role === 'admin' || user?.role === 'institute') && !searchTerm && (
-                                <button
-                                  onClick={() => setIsAddModalOpen(true)}
-                                  className="mt-4 flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                                >
-                                  <FiPlus className="mr-2" />
-                                  Add New Pharmacy
-                                </button>
-                              )}
+                              {(user?.role === 'admin' ||
+                                user?.role === 'institute') &&
+                                !searchTerm && (
+                                  <button
+                                    onClick={() => setIsAddModalOpen(true)}
+                                    className="mt-4 flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                  >
+                                    <FiPlus className="mr-2" />
+                                    Add New Dispensary
+                                  </button>
+                                )}
                             </div>
                           </td>
                         </tr>

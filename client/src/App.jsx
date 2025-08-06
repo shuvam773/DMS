@@ -9,6 +9,8 @@ import ProtectedRoute from './context/ProtectedRoute';
 import AdminPage from './components/pages/admin/AdminPage'
 import InstitutePage from './components/pages/institute/InstitutePage';
 import PharmacyPage from './components/pages/pharmacy/PharmacyPage';
+import { ToastContainer } from 'react-toastify';
+import Chatbot from './components/chatbot/Chatbot';
 const App = () => {
   return (
     <BrowserRouter>
@@ -46,6 +48,8 @@ const App = () => {
 
 
         </Routes>
+        <Chatbot />
+        <ToastContainer />
       </UserContextProvider>
     </BrowserRouter>
   );

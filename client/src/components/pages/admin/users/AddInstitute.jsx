@@ -1,7 +1,8 @@
 import React, { useContext, useState } from 'react';
 import { toast } from 'react-toastify';
 import UserContext from '../../../../context/UserContext';
-import axios from 'axios';
+import api from '../../../../api/api';
+
 
 const AddInstitute = ({ isOpen, onClose, onSave }) => {
   const { user } = useContext(UserContext);
@@ -22,9 +23,11 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
 
   const [formData, setFormData] = useState(initialFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({}); // For field-specific errors
 
   const resetForm = () => {
     setFormData(initialFormState);
+    setFieldErrors({});
   };
 
   const handleChange = (e) => {
@@ -33,10 +36,58 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
       ...prev,
       [name]: value,
     }));
+    // Clear field error when user types
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+      isValid = false;
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+      isValid = false;
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      errors.email = 'Please enter a valid email';
+      isValid = false;
+    }
+
+    if (!formData.password) {
+      errors.password = 'Password is required';
+      isValid = false;
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+      isValid = false;
+    }
+
+    if (!formData.phone.trim()) {
+      errors.phone = 'Phone number is required';
+      isValid = false;
+    }
+
+    if (!formData.license_number.trim()) {
+      errors.license_number = 'License number is required';
+      isValid = false;
+    }
+
+    setFieldErrors(errors);
+    return isValid;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -48,16 +99,7 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
         throw new Error('Only admin users can create institutes');
       }
 
-      const response = await axios.post(
-        'http://localhost:8080/api/users',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${user.jwtToken}`,
-          },
-        }
-      );
+      const response = await api.post('/users', formData); // Use api instance
 
       toast.success('Institute created successfully!');
       onSave(response.data.institute);
@@ -66,23 +108,21 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
     } catch (error) {
       console.error('Error:', error);
       let errorMessage = 'Failed to create institute';
-      let fieldErrors = {};
+      let newFieldErrors = {};
 
       if (error.response?.status === 409) {
         errorMessage = error.response.data.message;
         if (error.response.data.conflicts) {
           error.response.data.conflicts.forEach((field) => {
-            fieldErrors[field] = `This ${field} is already in use`;
+            newFieldErrors[field] = `This ${field} is already in use`;
           });
         }
       } else {
-        errorMessage =
-          error.response?.data?.message || error.message || errorMessage;
+        errorMessage = error.response?.data?.message || error.message || errorMessage;
       }
 
+      setFieldErrors(prev => ({ ...prev, ...newFieldErrors }));
       toast.error(errorMessage);
-      // You could set these field errors in state to display them next to the relevant fields
-      
     } finally {
       setIsSubmitting(false);
     }
@@ -99,6 +139,7 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
             <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
+              disabled={isSubmitting}
             >
               <svg
                 className="w-6 h-6"
@@ -118,6 +159,7 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
 
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              {/* Name Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Name*
@@ -127,11 +169,17 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    fieldErrors.name ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {fieldErrors.name && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
+                )}
               </div>
 
+              {/* Email Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email*
@@ -141,11 +189,17 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    fieldErrors.email ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {fieldErrors.email && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+                )}
               </div>
 
+              {/* Password Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Password*
@@ -155,11 +209,17 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    fieldErrors.password ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {fieldErrors.password && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
+                )}
               </div>
 
+              {/* Phone Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Phone*
@@ -169,11 +229,17 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    fieldErrors.phone ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {fieldErrors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
+                )}
               </div>
 
+              {/* License Number Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   License Number*
@@ -183,11 +249,17 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
                   name="license_number"
                   value={formData.license_number}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    fieldErrors.license_number ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {fieldErrors.license_number && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.license_number}</p>
+                )}
               </div>
 
+              {/* Street Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Street*
@@ -202,6 +274,7 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
                 />
               </div>
 
+              {/* City Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   City*
@@ -216,6 +289,7 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
                 />
               </div>
 
+              {/* State Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   State*
@@ -230,6 +304,7 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
                 />
               </div>
 
+              {/* Postal Code Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Postal Code*
@@ -244,6 +319,7 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
                 />
               </div>
 
+              {/* Country Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Country
@@ -257,6 +333,7 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
                 />
               </div>
 
+              {/* Role Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Role
@@ -268,10 +345,11 @@ const AddInstitute = ({ isOpen, onClose, onSave }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="institute">Institute</option>
-                  <option value="pharmacy">Pharmacy</option>
+                  <option value="pharmacy">Dispensary</option>
                 </select>
               </div>
 
+              {/* Status Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Status

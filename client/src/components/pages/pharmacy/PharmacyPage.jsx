@@ -10,6 +10,7 @@ import UserContext from '../../../context/UserContext';
 import logo from '../../../assets/logo.jpeg';
 import ProfileModal from '../ProfileModal';
 import PharmacyOrderHistory from './orders/PharmacyOrderHistory';
+import api from '../../../api/api';
 
 const PharmacyPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -22,18 +23,12 @@ const PharmacyPage = () => {
   const fetchProfileDetails = async () => {
     try {
       setLoadingProfile(true);
-      const response = await fetch('http://localhost:8080/api/auth/info', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await api.get('/auth/info');
 
-      const data = await response.json();
-
-      if (data.status && data.user) {
-        setProfileDetails(data.user);
+      if (response.data.status && response.data.user) {
+        setProfileDetails(response.data.user);
       } else {
-        throw new Error(data.message || 'Failed to fetch profile details');
+        throw new Error(response.data.message || 'Failed to fetch profile details');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -60,9 +55,9 @@ const PharmacyPage = () => {
         return <AnalyticsDashboard />;
       case 'drugs':
         return <DrugsTable />;
-      case 'order':
+      case 'indent':
         return <PharmacyOrderPage />;
-      case 'order-history':
+      case 'indent-history':
         return <PharmacyOrderHistory />;
       case 'settings':
         return <AdminSettings />;
@@ -125,8 +120,8 @@ const PharmacyPage = () => {
             {[
               { id: 'dashboard', icon: <FiHome />, label: 'Dashboard' },
               { id: 'drugs', icon: <FaPills />, label: 'Drugs' },
-              { id: 'order', icon: <FiPackage />, label: 'Orders' },
-              { id: 'order-history', icon: <FaHistory />, label: 'Order History' },
+              { id: 'indent', icon: <FiPackage />, label: 'Indents' },
+              { id: 'indent-history', icon: <FaHistory />, label: 'Indent History' },
               { id: 'settings', icon: <FiSettings />, label: 'Settings' },
             ].map((item) => (
               <li key={item.id}>

@@ -40,8 +40,8 @@ const OrderDetailsModal = ({ order, onClose }) => {
     doc.text(`Total Amount: ₹${formatCurrency(order.total_amount)}`, 14, 54);
     
     // Parties information
-    doc.text(`From: ${order.sender_name} (${order.sender_role})`, 14, 70);
-    doc.text(`To: ${order.recipient_name} (${order.recipient_role})`, 14, 78);
+    doc.text(`From: ${order.sender_name}`, 14, 70);
+    doc.text(`To: ${order.recipient_name} `, 14, 78);
     
     // Items table
     const tableColumn = ["Drug", "Batch #", "Qty", "Unit Price", "Total", "Status"];
@@ -159,13 +159,13 @@ const OrderDetailsModal = ({ order, onClose }) => {
                 <div>
                   <p className="font-medium">From:</p>
                   <p>
-                    {order.sender_name} ({order.sender_role})
+                    {order.sender_name} 
                   </p>
                 </div>
                 <div>
                   <p className="font-medium">To:</p>
                   <p>
-                    {order.recipient_name} ({order.recipient_role})
+                    {order.recipient_name} 
                   </p>
                 </div>
               </div>

@@ -9,6 +9,7 @@ import {
   FiX,
   FiChevronDown,
 } from 'react-icons/fi';
+import api from '../../../../api/api';
 
 const OrderPage = () => {
   const { user } = useContext(UserContext);
@@ -39,25 +40,18 @@ const OrderPage = () => {
   const fetchInstitutes = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `http://localhost:8080/api/users?role=institute`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
+      const response = await api.get('/users', {
+        params: {
+          role: 'institute',
+        },
+      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      console.log('Institutes data:', response.data);
 
-      const data = await response.json();
-      console.log('Institutes data:', data);
-
-      // Fix: Change from data.users to data.institutes
-      if (data.status && data.institutes) {
-        setInstitutes(data.institutes.filter((inst) => inst.id !== user.id));
+      if (response.data.status && response.data.institutes) {
+        setInstitutes(
+          response.data.institutes.filter((inst) => inst.id !== user.id)
+        );
       } else {
         toast.error('No institutes found');
       }
@@ -72,27 +66,19 @@ const OrderPage = () => {
   const fetchInstituteDrugs = async (instituteId) => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `http://localhost:8080/api/drugs?created_by=${instituteId}`, // Changed to created_by
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
+      const response = await api.get('/drugs', {
+        params: {
+          created_by: instituteId,
+        },
+      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      console.log('Drugs data:', response.data);
 
-      const data = await response.json();
-      console.log('Drugs data:', data); // Log the response to check structure
-
-      if (data.status && data.drugs) {
-        setDrugs(data.drugs);
-      } else if (Array.isArray(data)) {
+      if (response.data.status && response.data.drugs) {
+        setDrugs(response.data.drugs);
+      } else if (Array.isArray(response.data)) {
         // Handle case where endpoint returns array directly
-        setDrugs(data);
+        setDrugs(response.data);
       } else {
         toast.error('No drugs found for this institute');
         setDrugs([]);
@@ -217,66 +203,56 @@ const OrderPage = () => {
   };
 
   const submitOrder = async () => {
-  if (cart.length === 0) {
-    toast.warning('Please add items to your cart');
-    return;
-  }
-
-  try {
-    const orderData = {
-      items: cart.map((item) => {
-        if (selectedInstitute === 'manufacturer') {
-          return {
-            custom_name: item.name,
-            manufacturer_name: customManufacturer,
-            quantity: item.quantity,
-            unit_price: item.price,
-          };
-        } else {
-          return {
-            drug_id: item.drug_id,
-            quantity: item.quantity,
-          };
-        }
-      }),
-      recipient_id: selectedInstitute === 'manufacturer' ? null : selectedInstitute,
-      transaction_type: selectedInstitute === 'manufacturer' ? 'manufacturer' : 'institute',
-      notes,
-    };
-
-    console.log('Submitting order:', JSON.stringify(orderData, null, 2)); // Debug log
-
-    const response = await fetch('http://localhost:8080/api/orders', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify(orderData),
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      console.error('Server response error:', data); // Debug log
-      throw new Error(data.message || `Server error: ${response.status}`);
+    if (cart.length === 0) {
+      toast.warning('Please add items to your cart');
+      return;
     }
 
-    if (data.status) {
-      toast.success('Order placed successfully!');
-      setCart([]);
-      setNotes('');
-      setSelectedInstitute('');
-      setCustomManufacturer('');
-    
-    } else {
-      throw new Error(data.message || 'Failed to place order');
+    try {
+      const orderData = {
+        items: cart.map((item) => {
+          if (selectedInstitute === 'manufacturer') {
+            return {
+              custom_name: item.name,
+              manufacturer_name: customManufacturer,
+              quantity: item.quantity,
+              unit_price: item.price,
+            };
+          } else {
+            return {
+              drug_id: item.drug_id,
+              quantity: item.quantity,
+            };
+          }
+        }),
+        recipient_id:
+          selectedInstitute === 'manufacturer' ? null : selectedInstitute,
+        transaction_type:
+          selectedInstitute === 'manufacturer' ? 'manufacturer' : 'institute',
+        notes,
+      };
+
+      console.log('Submitting order:', JSON.stringify(orderData, null, 2));
+
+      const response = await api.post('/orders', orderData);
+
+      if (response.data.status) {
+        toast.success('Order placed successfully!');
+        setCart([]);
+        setNotes('');
+        setSelectedInstitute('');
+        setCustomManufacturer('');
+      } else {
+        throw new Error(response.data.message || 'Failed to place order');
+      }
+    } catch (error) {
+      console.error('Full order submission error:', error);
+      toast.error(
+        error.response?.data?.message ||
+          'Error placing order. Check console for details.'
+      );
     }
-  } catch (error) {
-    console.error('Full order submission error:', error);
-    toast.error(error.message || 'Error placing order. Check console for details.');
-  }
-};
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">

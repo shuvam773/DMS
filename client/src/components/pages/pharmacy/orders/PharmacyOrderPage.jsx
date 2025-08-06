@@ -10,6 +10,7 @@ import {
   FiLoader,
   FiAlertCircle,
 } from 'react-icons/fi';
+import api from '../../../../api/api';
 
 const PharmacyOrderPage = () => {
   const { user } = useContext(UserContext);
@@ -26,8 +27,6 @@ const PharmacyOrderPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    console.log('Current user context:', user);
-    console.log('User created_by value:', user?.created_by);
 
     if (user?.role !== 'pharmacy') {
       navigate('/unauthorized');
@@ -48,26 +47,13 @@ const PharmacyOrderPage = () => {
         return;
       }
 
-      const response = await fetch(
-        `http://localhost:8080/api/users/${user.created_by}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
+      const response = await api.get(`/users/${user.created_by}`);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (!data.status || !data.user) {
+      if (!response.data.status || !response.data.user) {
         throw new Error('Invalid response structure');
       }
 
-      const fetchedInstitute = data.user;
+      const fetchedInstitute = response.data.user;
 
       // Validate that this is actually an institute/hospital
       if (
@@ -91,25 +77,12 @@ const PharmacyOrderPage = () => {
   const fetchInstituteDrugs = async (instituteId) => {
     try {
       setLoading((prev) => ({ ...prev, drugs: true }));
-      const response = await fetch(
-        `http://localhost:8080/api/drugs?created_by=${instituteId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
+      const response = await api.get(`/drugs?created_by=${instituteId}`);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.status && data.drugs) {
-        setDrugs(data.drugs.filter((drug) => drug.stock > 0));
-      } else if (Array.isArray(data)) {
-        setDrugs(data.filter((drug) => drug.stock > 0));
+      if (response.data.status && response.data.drugs) {
+        setDrugs(response.data.drugs.filter((drug) => drug.stock > 0));
+      } else if (Array.isArray(response.data)) {
+        setDrugs(response.data.filter((drug) => drug.stock > 0));
       } else {
         toast.info('No available drugs found at this institute');
         setDrugs([]);
@@ -215,30 +188,14 @@ const PharmacyOrderPage = () => {
         notes,
       };
 
-      const response = await fetch(
-        'http://localhost:8080/api/pharmacy/orders',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify(orderData),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to place order');
-      }
+      await api.post('/pharmacy/orders', orderData);
 
       toast.success('Order placed successfully!');
       setCart([]);
       setNotes('');
     } catch (error) {
       console.error('Order submission error:', error);
-      toast.error(error.message || 'Error placing order');
+      toast.error(error.response?.data?.message || 'Error placing order');
     } finally {
       setLoading((prev) => ({ ...prev, submitting: false }));
     }
@@ -246,7 +203,7 @@ const PharmacyOrderPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Place Order to Institute</h1>
+      <h1 className="text-2xl font-bold mb-6">Indent to Institute</h1>
 
       {/* Institute Display */}
       <div className="mb-6 bg-white rounded-lg shadow p-6">
@@ -355,7 +312,7 @@ const PharmacyOrderPage = () => {
         {/* Order Summary Panel */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center">
-            <FiShoppingCart className="mr-2" /> Order Summary
+            <FiShoppingCart className="mr-2" /> Indent Summary
           </h2>
 
           {cart.length === 0 ? (

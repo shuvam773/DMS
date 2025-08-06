@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fi';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import api from '../../../../api/api';
 
 const PharmacyOrderHistory = () => {
   const { user } = useContext(UserContext);
@@ -43,37 +44,34 @@ const PharmacyOrderHistory = () => {
     try {
       setLoading(true);
 
-      let url = `http://localhost:8080/api/pharmacy/orders/history?page=${page}&limit=${limit}`;
+      const params = {
+        page,
+        limit,
+      };
 
       if (statusFilter !== 'all') {
-        url += `&status=${statusFilter}`;
+        params.status = statusFilter;
       }
 
       if (debouncedSearchTerm) {
-        url += `&search=${debouncedSearchTerm}`;
+        params.search = debouncedSearchTerm;
       }
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await api.get('/pharmacy/orders/history', { params });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
-      }
-
-      if (data.status) {
-        setOrders(data.orders || []);
-        setTotalOrders(data.total || 0);
+      if (response.data.status) {
+        setOrders(response.data.orders || []);
+        setTotalOrders(response.data.total || 0);
       } else {
-        toast.error(data.message || 'Failed to fetch order history');
+        toast.error(response.data.message || 'Failed to fetch order history');
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      toast.error(`Failed to load order history: ${error.message}`);
+      toast.error(
+        `Failed to load order history: ${
+          error.response?.data?.message || error.message
+        }`
+      );
     } finally {
       setLoading(false);
     }
@@ -98,14 +96,16 @@ const PharmacyOrderHistory = () => {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(20);
       doc.setTextColor(33, 37, 41);
-      doc.text('PHARMACY ORDER INVOICE', 105, 20, { align: 'center' });
+      doc.text('DISPENSARY ORDER INVOICE', 105, 20, { align: 'center' });
 
       doc.setFontSize(12);
       doc.text(`Order #: ${order.order_no}`, 20, 30);
       doc.text(`Date: ${formatDate(order.created_at)}`, 20, 38);
       doc.text(`Institute: ${order.recipient_name || 'N/A'}`, 20, 46);
 
-      const totalText = `Total Amount: ₹${parseFloat(order.total_amount).toFixed(2)}`;
+      const totalText = `Total Amount: ₹${parseFloat(
+        order.total_amount
+      ).toFixed(2)}`;
       doc.text(totalText, 20, 54);
 
       doc.setDrawColor(200, 200, 200);
@@ -239,8 +239,8 @@ const PharmacyOrderHistory = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Pharmacy Order History</h1>
-      <p className="text-gray-600 mb-6">View your orders to institutes</p>
+      <h1 className="text-2xl font-bold mb-6">Indent History</h1>
+      <p className="text-gray-600 mb-6">View your indent to institutes</p>
 
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

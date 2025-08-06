@@ -20,6 +20,7 @@ import OrderPage from './orders/OrderPage';
 import SellerPage from './orders/SellerPage';
 import OrderHistory from './orders/OrderHistory';
 import ProfileModal from '../ProfileModal';
+import api from '../../../api/api';
 
 const InstitutePage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -32,13 +33,8 @@ const InstitutePage = () => {
   const fetchProfileDetails = async () => {
     try {
       setLoadingProfile(true);
-      const response = await fetch('http://localhost:8080/api/auth/info', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      const data = await response.json();
+      const response = await api.get('/auth/info'); // Use api instead of fetch
+      const data = response.data;
 
       if (data.status && data.user) {
         setProfileDetails(data.user);
@@ -68,7 +64,7 @@ const InstitutePage = () => {
     switch (activeTab) {
       case 'dashboard':
         return <AnalyticsDashboard />;
-      case 'pharmacies':
+      case 'dispensaries':
         return <PharmaciesTable />;
       case 'drugs':
         return <DrugsTable />;
@@ -76,7 +72,7 @@ const InstitutePage = () => {
         return <OrderPage />;
       case 'order-history':
         return <OrderHistory />;
-      case 'seller':
+      case 'indent':
         return <SellerPage />;
       case 'settings':
         return <InstituteSettings />;
@@ -139,9 +135,9 @@ const InstitutePage = () => {
             {[
               { id: 'dashboard', icon: <FiHome />, label: 'Dashboard' },
               {
-                id: 'pharmacies',
+                id: 'dispensaries',
                 icon: <FiShoppingBag />,
-                label: 'Pharmacies',
+                label: 'Dispensaries',
               },
               { id: 'drugs', icon: <FaPills />, label: 'Drugs' },
               { id: 'orders', icon: <FiPackage />, label: 'Orders' },
@@ -150,7 +146,7 @@ const InstitutePage = () => {
                 icon: <FaHistory />,
                 label: 'Order History',
               },
-              { id: 'seller', icon: <FiTruck />, label: 'Sales' },
+              { id: 'indent', icon: <FiTruck />, label: 'Indent' },
               { id: 'settings', icon: <FiSettings />, label: 'Settings' },
             ].map((item) => (
               <li key={item.id}>

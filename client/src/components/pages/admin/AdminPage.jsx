@@ -19,6 +19,7 @@ import logo from '../../../assets/logo.jpeg';
 import { MdBorderColor } from 'react-icons/md';
 import ProfileModal from '../ProfileModal';
 import AdminOrderHistory from './orders/AdminOrderHistory';
+import api from '../../../api/api';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -31,18 +32,12 @@ const AdminPage = () => {
   const fetchProfileDetails = async () => {
     try {
       setLoadingProfile(true);
-      const response = await fetch('http://localhost:8080/api/auth/info', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.status && data.user) {
-        setProfileDetails(data.user);
+      const response = await api.get('/auth/info'); // Use api instance
+      
+      if (response.data.status && response.data.user) {
+        setProfileDetails(response.data.user);
       } else {
-        throw new Error(data.message || 'Failed to fetch profile details');
+        throw new Error(response.data.message || 'Failed to fetch profile details');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -213,7 +208,7 @@ const AdminPage = () => {
       )}
 
       {loadingProfile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <div className="flex items-center">
               <FiLoader className="animate-spin mr-2" />

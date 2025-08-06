@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fi';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import api from '../../../../api/api';
 
 const OrderHistory = () => {
   const { user } = useContext(UserContext);
@@ -37,33 +38,26 @@ const OrderHistory = () => {
     try {
       setLoading(true);
 
-      let url = `http://localhost:8080/api/history?page=${page}&limit=${limit}`;
-      url += `&transaction_type=${activeTab}`;
+      const params = {
+        page,
+        limit,
+        transaction_type: activeTab
+      };
 
       if (statusFilter !== 'all') {
-        url += `&status=${statusFilter}`;
+        params.status = statusFilter;
       }
 
       if (searchTerm) {
-        url += `&search=${searchTerm}`;
+        params.search = searchTerm;
       }
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await api.get('/history', { params });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.status) {
-        setOrders(data.orders || []);
+      if (response.data.status) {
+        setOrders(response.data.orders || []);
       } else {
-        toast.error(data.message || 'Failed to fetch order history');
+        toast.error(response.data.message || 'Failed to fetch order history');
       }
     } catch (error) {
       console.error('Fetch error:', error);

@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import UserContext from '../../context/UserContext';
 import { Link, useNavigate } from 'react-router-dom';
 import backgroundImage from '../../assets/logo.jpeg';
+import api from '../../api/api';
 
 const Register = () => {
   const { signupInfo, setSignupInfo } = useContext(UserContext);
@@ -23,10 +24,17 @@ const Register = () => {
 
     // Basic validation
     const requiredFields = [
-      'name', 'email', 'password', 'phone',
-      'street', 'city', 'state', 'postal_code', 'license_number'
+      'name',
+      'email',
+      'password',
+      'phone',
+      'street',
+      'city',
+      'state',
+      'postal_code',
+      'license_number',
     ];
-    
+
     for (const field of requiredFields) {
       if (!signupInfo[field]?.trim()) {
         setError(`${field.replace('_', ' ')} is required`);
@@ -47,41 +55,31 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: signupInfo.name,
-          email: signupInfo.email,
-          password: signupInfo.password,
-          phone: signupInfo.phone,
-          street: signupInfo.street,
-          city: signupInfo.city,
-          state: signupInfo.state,
-          postal_code: signupInfo.postal_code,
-          country: signupInfo.country || 'India',
-          license_number: signupInfo.license_number
-        }),
+      const response = await api.post('/auth/register', {
+        name: signupInfo.name,
+        email: signupInfo.email,
+        password: signupInfo.password,
+        phone: signupInfo.phone,
+        street: signupInfo.street,
+        city: signupInfo.city,
+        state: signupInfo.state,
+        postal_code: signupInfo.postal_code,
+        country: signupInfo.country || 'India',
+        license_number: signupInfo.license_number,
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Registration failed');
-      }
-
-      if (result.status) {
+      if (response.data.status) {
         navigate('/login', {
           state: {
             registrationSuccess: true,
-            email: result.user.email,
+            email: response.data.user.email,
           },
         });
       } else {
-        throw new Error(result.message);
+        throw new Error(response.data.message);
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Registration failed');
     } finally {
       setIsLoading(false);
     }
@@ -90,20 +88,17 @@ const Register = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div>
+          <img src={backgroundImage} alt="logo" className="w-32 h-32 mx-auto" />
+        </div>
         <h1 className="text-center text-3xl font-extrabold text-gray-900">
-        Registration
+          Registration
         </h1>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255, 255, 255,0.1), rgba(255,255,255,0.7)), url(${backgroundImage})`,
-            backgroundSize: '280px',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-          }}
-        >
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+        <div
+          className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
               {error}
@@ -113,10 +108,15 @@ const Register = () => {
           <form className="space-y-4" onSubmit={handleSubmit}>
             {/* Personal Information */}
             <div className="space-y-4">
-              <h2 className="text-lg font-medium text-gray-900">Personal Information</h2>
-              
+              <h2 className="text-lg font-medium text-gray-900">
+                Personal Information
+              </h2>
+
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Full Name
                 </label>
                 <input
@@ -131,7 +131,10 @@ const Register = () => {
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Email
                 </label>
                 <input
@@ -146,7 +149,10 @@ const Register = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Password
                 </label>
                 <input
@@ -162,7 +168,10 @@ const Register = () => {
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="phone"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Phone Number
                 </label>
                 <input
@@ -177,7 +186,10 @@ const Register = () => {
               </div>
 
               <div>
-                <label htmlFor="license_number" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="license_number"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   License Number
                 </label>
                 <input
@@ -186,7 +198,7 @@ const Register = () => {
                   name="license_number"
                   required
                   className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="Enter your pharmacy license number"
+                  placeholder="Enter your license number"
                   value={signupInfo.license_number || ''}
                 />
               </div>
@@ -195,9 +207,12 @@ const Register = () => {
             {/* Address Information */}
             <div className="space-y-4">
               <h2 className="text-lg font-medium text-gray-900">Address</h2>
-              
+
               <div>
-                <label htmlFor="street" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="street"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Street Address
                 </label>
                 <input
@@ -213,7 +228,10 @@ const Register = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="city"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     City
                   </label>
                   <input
@@ -228,7 +246,10 @@ const Register = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="state"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     State
                   </label>
                   <input
@@ -245,7 +266,10 @@ const Register = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="postal_code" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="postal_code"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Postal Code
                   </label>
                   <input
@@ -260,7 +284,10 @@ const Register = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="country"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Country
                   </label>
                   <select
@@ -284,7 +311,7 @@ const Register = () => {
                   isLoading ? 'opacity-75 cursor-not-allowed' : ''
                 }`}
               >
-                {isLoading ? 'Registering...' : 'Register Pharmacy'}
+                {isLoading ? 'Registering...' : 'Register as Dispensary'}
               </button>
             </div>
 

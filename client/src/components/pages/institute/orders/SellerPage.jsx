@@ -2,7 +2,8 @@ import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import UserContext from '../../../../context/UserContext';
 import { toast } from 'react-toastify';
-import { FiPackage, FiCheck, FiX, FiTruck } from 'react-icons/fi';
+import { FiPackage } from 'react-icons/fi';
+import api from '../../../../api/api';
 
 const SellerPage = () => {
   const { user } = useContext(UserContext);
@@ -22,29 +23,26 @@ const SellerPage = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `http://localhost:8080/api/seller/orders?status=${selectedStatus}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
+      const response = await api.get('/seller/orders', {
+        params: { status: selectedStatus }
+      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (response.data.status) {
+        // Filter orders client-side if needed (or rely on server-side filtering)
+        const filteredOrders = response.data.orders
+          ?.map(order => ({
+            ...order,
+            items: order.items?.filter(item => item.status === selectedStatus) || []
+          }))
+          .filter(order => order.items.length > 0) || [];
 
-      const data = await response.json();
-
-      if (data.status) {
-        setOrders(data.orders || []);
+        setOrders(filteredOrders);
       } else {
-        toast.error(data.message || 'Failed to fetch orders');
+        toast.error(response.data.message || 'Failed to fetch orders');
       }
     } catch (error) {
       console.error('Fetch orders error:', error);
-      toast.error('Failed to fetch orders');
+      toast.error(error.response?.data?.message || 'Failed to fetch orders');
     } finally {
       setLoading(false);
     }
@@ -52,63 +50,49 @@ const SellerPage = () => {
 
   const updateItemStatus = async (orderItemId, newStatus) => {
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/seller/order-items/${orderItemId}/status`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
+      const response = await api.patch(
+        `/seller/order-items/${orderItemId}/status`,
+        { status: newStatus }
       );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.status) {
+      if (response.data.status) {
         toast.success('Status updated successfully');
-        fetchOrders();
+        fetchOrders(); // Refresh the list with current filter
       } else {
-        toast.error(data.message || 'Failed to update status');
+        toast.error(response.data.message || 'Failed to update status');
       }
     } catch (error) {
       console.error('Update status error:', error);
-      toast.error('Error updating status');
+      toast.error(error.response?.data?.message || 'Error updating status');
     }
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'shipped':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-yellow-100 text-yellow-800';
-    }
+    const statusColors = {
+      approved: 'bg-green-100 text-green-800',
+      rejected: 'bg-red-100 text-red-800',
+      shipped: 'bg-blue-100 text-blue-800',
+      default: 'bg-yellow-100 text-yellow-800'
+    };
+    return statusColors[status] || statusColors.default;
   };
 
   const getStatusOptions = (currentStatus) => {
-    const options = [
+    const baseOptions = [
       { value: 'pending', label: 'Pending' },
       { value: 'approved', label: 'Approve' },
       { value: 'rejected', label: 'Reject' },
     ];
 
     if (currentStatus === 'approved') {
-      options.push({ value: 'shipped', label: 'Shipped' });
+      return [...baseOptions, { value: 'shipped', label: 'Shipped' }];
     }
 
-    return options;
+    return baseOptions;
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     const options = {
       year: 'numeric',
       month: 'short',
@@ -179,98 +163,59 @@ const SellerPage = () => {
                 <div className="flex justify-between text-sm mb-4">
                   <span>Items: {order.item_count}</span>
                   <div className="flex space-x-2">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                        'pending'
-                      )}`}
-                    >
-                      Pending: {order.pending_items || 0}
-                    </span>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                        'approved'
-                      )}`}
-                    >
-                      Approved: {order.approved_items || 0}
-                    </span>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                        'rejected'
-                      )}`}
-                    >
-                      Rejected: {order.rejected_items || 0}
-                    </span>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                        'shipped'
-                      )}`}
-                    >
-                      Shipped: {order.shipped_items || 0}
-                    </span>
+                    {['pending', 'approved', 'rejected', 'shipped'].map(status => (
+                      <span
+                        key={status}
+                        className={`px-2 py-1 rounded-full text-xs ${getStatusColor(status)}`}
+                      >
+                        {status.charAt(0).toUpperCase() + status.slice(1)}: {order[`${status}_items`] || 0}
+                      </span>
+                    ))}
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  {order.items && order.items.length > 0 ? (
-                    order.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex justify-between items-center p-3 bg-gray-50 rounded"
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium">{item.drug_name}</p>
-                          <p className="text-sm text-gray-600">
-                            {item.quantity} × ₹
-                            {parseFloat(item.unit_price || 0).toFixed(2)} = ₹
-                            {parseFloat(item.total_price || 0).toFixed(2)}
+                  {order.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex justify-between items-center p-3 bg-gray-50 rounded"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium">{item.drug_name}</p>
+                        <p className="text-sm text-gray-600">
+                          {item.quantity} × ₹{parseFloat(item.unit_price || 0).toFixed(2)} = ₹
+                          {parseFloat(item.total_price || 0).toFixed(2)}
+                        </p>
+                        {item.batch_no && (
+                          <p className="text-xs text-gray-500">Batch: {item.batch_no}</p>
+                        )}
+                        {item.category && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Category: <span className="font-medium">{item.category}</span>
                           </p>
-                          {item.batch_no && (
-                            <p className="text-xs text-gray-500">
-                              Batch: {item.batch_no}
-                            </p>
-                          )}
-                          {/* Add category display */}
-                          {item.category && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Category:{' '}
-                              <span className="font-medium">
-                                {item.category}
-                              </span>
-                            </p>
-                          )}
-                          <div className="flex items-center mt-1">
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                                item.status
-                              )}`}
-                            >
-                              {item.status}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <select
-                            value={item.status}
-                            onChange={(e) =>
-                              updateItemStatus(item.id, e.target.value)
-                            }
-                            className="border rounded p-1 text-sm"
-                            disabled={item.status === 'rejected'}
-                          >
-                            {getStatusOptions(item.status).map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                        )}
+                        <div className="flex items-center mt-1">
+                          <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(item.status)}`}>
+                            {item.status}
+                          </span>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">
-                      No items found for this order
-                    </p>
-                  )}
+                      <div className="flex items-center space-x-2">
+                        <select
+                          value={item.status}
+                          onChange={(e) => updateItemStatus(item.id, e.target.value)}
+                          className="border rounded p-1 text-sm"
+                          disabled={item.status === 'rejected'}
+                        >
+                          {getStatusOptions(item.status).map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

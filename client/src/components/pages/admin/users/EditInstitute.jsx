@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import UserContext from '../../../../context/UserContext';
-import axios from 'axios';
+import api from '../../../../api/api'; // Import the api instance
 
 const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
   const { user } = useContext(UserContext);
@@ -19,6 +19,7 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
     status: 'Active'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
     if (institute) {
@@ -44,10 +45,50 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
       ...prev,
       [name]: value
     }));
+    // Clear field error when user types
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+      isValid = false;
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+      isValid = false;
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      errors.email = 'Please enter a valid email';
+      isValid = false;
+    }
+
+    if (!formData.phone.trim()) {
+      errors.phone = 'Phone number is required';
+      isValid = false;
+    }
+
+    if (!formData.license_number.trim()) {
+      errors.license_number = 'License number is required';
+      isValid = false;
+    }
+
+    setFieldErrors(errors);
+    return isValid;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -59,25 +100,28 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
         throw new Error('Only admin users can update institutes');
       }
 
-      const response = await axios.put(
-        `http://localhost:8080/api/users/${institute.id}`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${user.jwtToken}`,
-          },
-        }
-      );
+      const response = await api.put(`/users/${institute.id}`, formData);
 
       toast.success('Institute updated successfully!');
       onSave(response.data.institute);
       onClose();
     } catch (error) {
       console.error('Error:', error);
-      const errorMessage = error.response?.data?.message || 
-                         error.message || 
-                         'Failed to update institute';
+      let errorMessage = 'Failed to update institute';
+      let newFieldErrors = {};
+
+      if (error.response?.status === 409) {
+        errorMessage = error.response.data.message;
+        if (error.response.data.conflicts) {
+          error.response.data.conflicts.forEach((field) => {
+            newFieldErrors[field] = `This ${field} is already in use`;
+          });
+        }
+      } else {
+        errorMessage = error.response?.data?.message || error.message || errorMessage;
+      }
+
+      setFieldErrors(prev => ({ ...prev, ...newFieldErrors }));
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -92,7 +136,11 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold">Edit Institute</h3>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <button 
+              onClick={onClose} 
+              className="text-gray-500 hover:text-gray-700"
+              disabled={isSubmitting}
+            >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -101,6 +149,7 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
 
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              {/* Name Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name*</label>
                 <input
@@ -108,11 +157,17 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    fieldErrors.name ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {fieldErrors.name && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
+                )}
               </div>
 
+              {/* Email Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email*</label>
                 <input
@@ -120,11 +175,17 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    fieldErrors.email ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {fieldErrors.email && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+                )}
               </div>
 
+              {/* Phone Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone*</label>
                 <input
@@ -132,11 +193,17 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    fieldErrors.phone ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {fieldErrors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
+                )}
               </div>
 
+              {/* License Number Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">License Number*</label>
                 <input
@@ -144,11 +211,17 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                   name="license_number"
                   value={formData.license_number}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    fieldErrors.license_number ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {fieldErrors.license_number && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.license_number}</p>
+                )}
               </div>
 
+              {/* Street Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Street*</label>
                 <input
@@ -161,6 +234,7 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                 />
               </div>
 
+              {/* City Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">City*</label>
                 <input
@@ -173,6 +247,7 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                 />
               </div>
 
+              {/* State Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">State*</label>
                 <input
@@ -185,6 +260,7 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                 />
               </div>
 
+              {/* Postal Code Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code*</label>
                 <input
@@ -197,6 +273,7 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                 />
               </div>
 
+              {/* Country Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
                 <input
@@ -208,6 +285,7 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                 />
               </div>
 
+              {/* Role Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                 <select
@@ -221,6 +299,7 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                 </select>
               </div>
 
+              {/* Status Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select

@@ -1,6 +1,6 @@
-import React, { useState, useContext } from 'react';
-import axios from 'axios';
+import { useState, useContext } from 'react';
 import UserContext from '../../../context/UserContext';
+import api from '../../../api/api';
 
 const InstituteSettings = () => {
   const { user } = useContext(UserContext);
@@ -82,12 +82,7 @@ const InstituteSettings = () => {
     setSuccessMessage('');
     
     try {
-      const { data } = await axios.put('http://localhost:8080/api/reset/profile', profileForm, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
+      const { data } = await api.put('/reset/profile', profileForm); // Use api instead of axios
       setSuccessMessage('Profile updated successfully');
       if (data.user) {
         localStorage.setItem('loggedInUser', data.user.name);
@@ -113,13 +108,9 @@ const InstituteSettings = () => {
     setSuccessMessage('');
     
     try {
-      await axios.put('http://localhost:8080/api/reset/profile/password', {
+      await api.put('/reset/profile/password', {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword
-      }, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
       });
 
       setSuccessMessage('Password changed successfully');

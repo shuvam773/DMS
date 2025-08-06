@@ -9,8 +9,8 @@ import {
   FiChevronsRight,
   FiRefreshCw,
 } from 'react-icons/fi';
-import axios from 'axios';
 import OrderDetailsModal from './OrderDetailsModal';
+import api from '../../../../api/api';
 
 const AdminOrderHistory = () => {
   const [orders, setOrders] = useState([]);
@@ -32,21 +32,15 @@ const AdminOrderHistory = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        'http://localhost:8080/api/admin/orders',
-        {
-          params: {
-            page: pagination.page,
-            limit: pagination.limit,
-            status: filters.status !== 'all' ? filters.status : undefined,
-            transaction_type: filters.type !== 'all' ? filters.type : undefined,
-            search: searchTerm || undefined,
-          },
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
+      const response = await api.get('/admin/orders', {
+        params: {
+          page: pagination.page,
+          limit: pagination.limit,
+          status: filters.status !== 'all' ? filters.status : undefined,
+          transaction_type: filters.type !== 'all' ? filters.type : undefined,
+          search: searchTerm || undefined,
         }
-      );
+      });
 
       setOrders(response.data.orders);
       setPagination((prev) => ({
@@ -102,14 +96,7 @@ const AdminOrderHistory = () => {
 
   const viewOrderDetails = async (orderId) => {
     try {
-      const response = await axios.get(
-        `http://localhost:8080/api/admin/orders/${orderId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
+      const response = await api.get(`/admin/orders/${orderId}`);
       setSelectedOrder(response.data.order);
       setShowDetailsModal(true);
     } catch (err) {
@@ -136,8 +123,8 @@ const AdminOrderHistory = () => {
     switch (type) {
       case 'institute':
         return 'Institute Order';
-      case 'pharmacy':
-        return 'Pharmacy Order';
+      case 'dispensary':
+        return 'Dispensary Order';
       case 'manufacturer':
         return 'Manufacturer Order';
       default:
@@ -217,7 +204,7 @@ const AdminOrderHistory = () => {
           >
             <option value="all">All Types</option>
             <option value="institute">Institute Orders</option>
-            <option value="pharmacy">Pharmacy Orders</option>
+            <option value="dispensary">Dispensary Orders</option>
             <option value="manufacturer">Manufacturer Orders</option>
           </select>
         </div>

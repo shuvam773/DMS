@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiFilter, FiX, FiSave, FiCheck, FiXCircle } from 'react-icons/fi';
 import { FaPills, FaExclamationTriangle } from 'react-icons/fa';
 import { DRUG_TYPES } from '../../../../constants/drugTypes';
 import { DRUG_NAMES } from '../../../../constants/drugNames';
+import api from '../../../../api/api';
 
 const DrugsTable = () => {
   const [drugs, setDrugs] = useState([]);
@@ -52,12 +52,7 @@ const DrugsTable = () => {
   const fetchDrugs = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8080/api/drugs', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const response = await api.get('/drugs'); 
       
       if (response.data && Array.isArray(response.data.drugs)) {
         setDrugs(response.data.drugs);
@@ -146,7 +141,7 @@ const DrugsTable = () => {
   };
 
   const handleDrugTypeChange = (e, isEditing = false, drugId = null) => {
-    const { name, value } = e.target;
+    const { value } = e.target;
     
     if (isEditing) {
       handleDrugChange(drugId, e);
@@ -215,16 +210,7 @@ const DrugsTable = () => {
       }
 
       setIsLoading(true);
-      const token = localStorage.getItem('token');
-      await axios.post(
-        'http://localhost:8080/api/drugs',
-        newDrug,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await api.post('/drugs', newDrug); // Use api instead of axios
 
       toast.success('Drug added successfully!');
       fetchDrugs();
@@ -248,24 +234,15 @@ const DrugsTable = () => {
       }
 
       setIsLoading(true);
-      const token = localStorage.getItem('token');
-      await axios.put(
-        `http://localhost:8080/api/drugs/${id}`,
-        {
-          name: drugToUpdate.name,
-          description: drugToUpdate.description,
-          stock: drugToUpdate.stock,
-          price: drugToUpdate.price,
-          batch_no: drugToUpdate.batch_no,
-          drug_type: drugToUpdate.drug_type,
-          category: drugToUpdate.category,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await api.put(`/drugs/${id}`, { // Use api instead of axios
+        name: drugToUpdate.name,
+        description: drugToUpdate.description,
+        stock: drugToUpdate.stock,
+        price: drugToUpdate.price,
+        batch_no: drugToUpdate.batch_no,
+        drug_type: drugToUpdate.drug_type,
+        category: drugToUpdate.category,
+      });
 
       toast.success('Drug updated successfully!');
       setEditingId(null);
@@ -284,12 +261,7 @@ const DrugsTable = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:8080/api/drugs/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      await api.delete(`/drugs/${id}`); // Use api instead of axios
       
       toast.success('Drug deleted successfully');
       fetchDrugs();
