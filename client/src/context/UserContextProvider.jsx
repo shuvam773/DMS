@@ -62,6 +62,7 @@ const UserContextProvider = ({ children }) => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userEmail');
     setUser(null);
+    window.location.href = '/login';
   };
 
   const [signupInfo, setSignupInfo] = useState({

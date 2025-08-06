@@ -55,7 +55,7 @@ const AdminPage = () => {
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/login';
+    window.location.href = '/';
   };
 
   const renderTabContent = () => {
