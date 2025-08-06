@@ -79,7 +79,9 @@ const Register = () => {
         throw new Error(response.data.message);
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Registration failed');
+      setError(
+        err.response?.data?.message || err.message || 'Registration failed'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -87,18 +89,20 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div>
-          <img src={backgroundImage} alt="logo" className="w-32 h-32 mx-auto" />
-        </div>
-        <h1 className="text-center text-3xl font-extrabold text-gray-900">
-          Registration
-        </h1>
-      </div>
-
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
-        <div
-          className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <div>
+              <img
+                src={backgroundImage}
+                alt="logo"
+                className="w-32 h-32 mx-auto"
+              />
+            </div>
+            <h1 className="text-center text-3xl font-extrabold text-gray-900">
+              Registration
+            </h1>
+          </div>
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
               {error}
