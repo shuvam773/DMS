@@ -7,7 +7,7 @@ import api from '../../api/api';
 
 const Chatbot = () => {
   const { user } = useContext(UserContext);
-  const token = user?.jwtToken;
+  
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
