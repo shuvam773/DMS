@@ -20,14 +20,15 @@ import { MdBorderColor } from 'react-icons/md';
 import ProfileModal from '../ProfileModal';
 import AdminOrderHistory from './orders/AdminOrderHistory';
 import api from '../../../api/api';
+import { NavLink, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 
 const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
   const { user, logout } = useContext(UserContext);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileDetails, setProfileDetails] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const location = useLocation();
 
   const fetchProfileDetails = async () => {
     try {
@@ -56,23 +57,6 @@ const AdminPage = () => {
   const handleLogout = () => {
     logout();
     window.location.href = '/';
-  };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <AnalyticsDashboard />;
-      case 'institutes':
-        return <InstitutesTable />;
-      case 'drugs':
-        return <DrugsTable />;
-      case 'orders-history':
-        return <AdminOrderHistory />;
-      case 'settings':
-        return <AdminSettings />;
-      default:
-        return <AnalyticsDashboard />;
-    }
   };
 
   return (
@@ -127,28 +111,29 @@ const AdminPage = () => {
         <nav className="flex-1 px-2">
           <ul className="space-y-1">
             {[
-              { id: 'dashboard', icon: <FiHome />, label: 'Dashboard' },
-              { id: 'institutes', icon: <FaRegHospital />, label: 'Users' },
-              { id: 'drugs', icon: <FaPills />, label: 'Drugs' },
-              { id: 'orders-history', icon: <MdBorderColor />, label: 'Orders' },
-              { id: 'settings', icon: <FiSettings />, label: 'Settings' },
+              { id: 'dashboard', icon: <FiHome />, label: 'Dashboard', to: 'dashboard' },
+              { id: 'institutes', icon: <FaRegHospital />, label: 'Users', to: 'institutes' },
+              { id: 'drugs', icon: <FaPills />, label: 'Drugs', to: 'drugs' },
+              { id: 'orders-history', icon: <MdBorderColor />, label: 'Orders', to: 'orders-history' },
+              { id: 'settings', icon: <FiSettings />, label: 'Settings', to: 'settings' },
             ].map((item) => (
               <li key={item.id}>
-                <button
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center p-3 rounded-lg transition-colors
-                    ${
-                      activeTab === item.id
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `w-full flex items-center p-3 rounded-lg transition-colors ${
+                      isActive
                         ? 'bg-indigo-700 text-white'
                         : 'text-indigo-200 hover:bg-indigo-700/50'
-                    }
-                    ${sidebarCollapsed ? 'justify-center' : ''}`}
+                    } ${sidebarCollapsed ? 'justify-center' : ''}`
+                  }
+                  end
                 >
                   <span className="text-lg">{item.icon}</span>
                   {!sidebarCollapsed && (
                     <span className="ml-3">{item.label}</span>
                   )}
-                </button>
+                </NavLink>
               </li>
             ))}
           </ul>
@@ -194,7 +179,14 @@ const AdminPage = () => {
         {/* Content Area */}
         <main className="p-6">
           <div className="bg-white rounded-xl shadow-sm p-6">
-            {renderTabContent()}
+            <Routes>
+              <Route path="" element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<AnalyticsDashboard />} />
+              <Route path="institutes" element={<InstitutesTable />} />
+              <Route path="drugs" element={<DrugsTable />} />
+              <Route path="orders-history" element={<AdminOrderHistory />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Routes>
           </div>
         </main>
       </div>

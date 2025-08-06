@@ -21,14 +21,15 @@ import SellerPage from './orders/SellerPage';
 import OrderHistory from './orders/OrderHistory';
 import ProfileModal from '../ProfileModal';
 import api from '../../../api/api';
+import { NavLink, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 
 const InstitutePage = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
   const { user, logout } = useContext(UserContext);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileDetails, setProfileDetails] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const location = useLocation();
 
   const fetchProfileDetails = async () => {
     try {
@@ -58,27 +59,6 @@ const InstitutePage = () => {
   const handleLogout = () => {
     logout();
     window.location.href = '/login';
-  };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <AnalyticsDashboard />;
-      case 'dispensaries':
-        return <PharmaciesTable />;
-      case 'drugs':
-        return <DrugsTable />;
-      case 'orders':
-        return <OrderPage />;
-      case 'order-history':
-        return <OrderHistory />;
-      case 'indent':
-        return <SellerPage />;
-      case 'settings':
-        return <InstituteSettings />;
-      default:
-        return <AnalyticsDashboard />;
-    }
   };
 
   return (
@@ -133,38 +113,31 @@ const InstitutePage = () => {
         <nav className="flex-1 px-2">
           <ul className="space-y-1">
             {[
-              { id: 'dashboard', icon: <FiHome />, label: 'Dashboard' },
-              {
-                id: 'dispensaries',
-                icon: <FiShoppingBag />,
-                label: 'Dispensaries',
-              },
-              { id: 'drugs', icon: <FaPills />, label: 'Drugs' },
-              { id: 'orders', icon: <FiPackage />, label: 'Orders' },
-              {
-                id: 'order-history',
-                icon: <FaHistory />,
-                label: 'Order History',
-              },
-              { id: 'indent', icon: <FiTruck />, label: 'Indent' },
-              { id: 'settings', icon: <FiSettings />, label: 'Settings' },
+              { id: 'dashboard', icon: <FiHome />, label: 'Dashboard', to: 'dashboard' },
+              { id: 'dispensaries', icon: <FiShoppingBag />, label: 'Dispensaries', to: 'dispensaries' },
+              { id: 'drugs', icon: <FaPills />, label: 'Drugs', to: 'drugs' },
+              { id: 'orders', icon: <FiPackage />, label: 'Orders', to: 'orders' },
+              { id: 'order-history', icon: <FaHistory />, label: 'Order History', to: 'order-history' },
+              { id: 'indent', icon: <FiTruck />, label: 'Indent', to: 'indent' },
+              { id: 'settings', icon: <FiSettings />, label: 'Settings', to: 'settings' },
             ].map((item) => (
               <li key={item.id}>
-                <button
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center p-3 rounded-lg transition-colors
-                    ${
-                      activeTab === item.id
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `w-full flex items-center p-3 rounded-lg transition-colors ${
+                      isActive
                         ? 'bg-indigo-700 text-white'
                         : 'text-indigo-200 hover:bg-indigo-700/50'
-                    }
-                    ${sidebarCollapsed ? 'justify-center' : ''}`}
+                    } ${sidebarCollapsed ? 'justify-center' : ''}`
+                  }
+                  end
                 >
                   <span className="text-lg">{item.icon}</span>
                   {!sidebarCollapsed && (
                     <span className="ml-3">{item.label}</span>
                   )}
-                </button>
+                </NavLink>
               </li>
             ))}
           </ul>
@@ -210,7 +183,16 @@ const InstitutePage = () => {
         {/* Content Area */}
         <main className="p-6">
           <div className="bg-white rounded-xl shadow-sm p-6">
-            {renderTabContent()}
+            <Routes>
+              <Route path="" element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<AnalyticsDashboard />} />
+              <Route path="dispensaries" element={<PharmaciesTable />} />
+              <Route path="drugs" element={<DrugsTable />} />
+              <Route path="orders" element={<OrderPage />} />
+              <Route path="order-history" element={<OrderHistory />} />
+              <Route path="indent" element={<SellerPage />} />
+              <Route path="settings" element={<InstituteSettings />} />
+            </Routes>
           </div>
         </main>
       </div>

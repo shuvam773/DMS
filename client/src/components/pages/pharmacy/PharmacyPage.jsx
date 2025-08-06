@@ -11,14 +11,15 @@ import logo from '../../../assets/logo.jpeg';
 import ProfileModal from '../ProfileModal';
 import PharmacyOrderHistory from './orders/PharmacyOrderHistory';
 import api from '../../../api/api';
+import { NavLink, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 
 const PharmacyPage = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
   const { user, logout } = useContext(UserContext);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileDetails, setProfileDetails] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const location = useLocation();
 
   const fetchProfileDetails = async () => {
     try {
@@ -47,23 +48,6 @@ const PharmacyPage = () => {
   const handleLogout = () => {
     logout();
     window.location.href = '/login';
-  };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <AnalyticsDashboard />;
-      case 'drugs':
-        return <DrugsTable />;
-      case 'indent':
-        return <PharmacyOrderPage />;
-      case 'indent-history':
-        return <PharmacyOrderHistory />;
-      case 'settings':
-        return <AdminSettings />;
-      default:
-        return <AnalyticsDashboard />;
-    }
   };
 
   return (
@@ -118,28 +102,29 @@ const PharmacyPage = () => {
         <nav className="flex-1 px-2">
           <ul className="space-y-1">
             {[
-              { id: 'dashboard', icon: <FiHome />, label: 'Dashboard' },
-              { id: 'drugs', icon: <FaPills />, label: 'Drugs' },
-              { id: 'indent', icon: <FiPackage />, label: 'Indents' },
-              { id: 'indent-history', icon: <FaHistory />, label: 'Indent History' },
-              { id: 'settings', icon: <FiSettings />, label: 'Settings' },
+              { id: 'dashboard', icon: <FiHome />, label: 'Dashboard', to: 'dashboard' },
+              { id: 'drugs', icon: <FaPills />, label: 'Drugs', to: 'drugs' },
+              { id: 'indent', icon: <FiPackage />, label: 'Indents', to: 'indent' },
+              { id: 'indent-history', icon: <FaHistory />, label: 'Indent History', to: 'indent-history' },
+              { id: 'settings', icon: <FiSettings />, label: 'Settings', to: 'settings' },
             ].map((item) => (
               <li key={item.id}>
-                <button
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center p-3 rounded-lg transition-colors
-                    ${
-                      activeTab === item.id
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `w-full flex items-center p-3 rounded-lg transition-colors ${
+                      isActive
                         ? 'bg-indigo-700 text-white'
                         : 'text-blue-200 hover:bg-indigo-700/50'
-                    }
-                    ${sidebarCollapsed ? 'justify-center' : ''}`}
+                    } ${sidebarCollapsed ? 'justify-center' : ''}`
+                  }
+                  end
                 >
                   <span className="text-lg">{item.icon}</span>
                   {!sidebarCollapsed && (
                     <span className="ml-3">{item.label}</span>
                   )}
-                </button>
+                </NavLink>
               </li>
             ))}
           </ul>
@@ -185,7 +170,14 @@ const PharmacyPage = () => {
         {/* Content Area */}
         <main className="p-6">
           <div className="bg-white rounded-xl shadow-sm p-6">
-            {renderTabContent()}
+            <Routes>
+              <Route path="" element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<AnalyticsDashboard />} />
+              <Route path="drugs" element={<DrugsTable />} />
+              <Route path="indent" element={<PharmacyOrderPage />} />
+              <Route path="indent-history" element={<PharmacyOrderHistory />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Routes>
           </div>
         </main>
       </div>

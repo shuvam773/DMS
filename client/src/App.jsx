@@ -29,21 +29,44 @@ const App = () => {
             <ProtectedRoute roles={['admin']}>
               <AdminPage/>
             </ProtectedRoute>
-          }></Route>
+          }>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminPage type="dashboard" />} />
+            <Route path="institutes" element={<AdminPage type="institutes" />} />
+            <Route path="drugs" element={<AdminPage type="drugs" />} />
+            <Route path="orders-history" element={<AdminPage type="orders-history" />} />
+            <Route path="settings" element={<AdminPage type="settings" />} />
+          </Route>
           
           {/* institute */}
           <Route path='/institute' element={
             <ProtectedRoute roles={['institute', 'admin']}>
               <InstitutePage/>
             </ProtectedRoute>
-          }></Route>
+          }>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<InstitutePage type="dashboard" />} />
+            <Route path="dispensaries" element={<InstitutePage type="dispensaries" />} />
+            <Route path="drugs" element={<InstitutePage type="drugs" />} />
+            <Route path="orders" element={<InstitutePage type="orders" />} />
+            <Route path="order-history" element={<InstitutePage type="order-history" />} />
+            <Route path="indent" element={<InstitutePage type="indent" />} />
+            <Route path="settings" element={<InstitutePage type="settings" />} />
+          </Route>
 
           {/* pharmacy  */}
           <Route path='/pharmacy' element={
             <ProtectedRoute roles={['institute', 'admin', 'pharmacy']}>
               <PharmacyPage/>
             </ProtectedRoute>
-          }></Route>
+          }>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<PharmacyPage type="dashboard" />} />
+            <Route path="drugs" element={<PharmacyPage type="drugs" />} />
+            <Route path="indent" element={<PharmacyPage type="indent" />} />
+            <Route path="indent-history" element={<PharmacyPage type="indent-history" />} />
+            <Route path="settings" element={<PharmacyPage type="settings" />} />
+          </Route>
           
 
 
