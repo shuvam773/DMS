@@ -112,9 +112,10 @@ const listSellerOrders = async (req, res) => {
 const updateOrderItemStatus = async (req, res) => {
   const db = req.app.locals.db;
   const { orderItemId } = req.params;
-  const { status } = req.body;
+  const { status, quantity } = req.body; // Add quantity to the request body
   const sellerId = req.user.id;
 
+  // Validate inputs
   if (
     !status ||
     !['pending', 'approved', 'rejected', 'shipped'].includes(status)
@@ -126,11 +127,18 @@ const updateOrderItemStatus = async (req, res) => {
     });
   }
 
+  if (quantity && (isNaN(quantity) || quantity <= 0)) {
+    return res.status(400).json({
+      status: false,
+      message: 'Quantity must be a positive number',
+    });
+  }
+
   try {
-    // Verify the order item belongs to this seller and is an institute transaction
+    // Verify the order item belongs to this seller
     const itemResult = await db.query(
       `SELECT oi.id, oi.status as current_status, o.transaction_type, 
-              oi.drug_id, oi.quantity, d.stock
+              oi.drug_id, oi.quantity as original_quantity, d.stock
        FROM order_items oi
        JOIN orders o ON oi.order_id = o.id
        LEFT JOIN drugs d ON oi.drug_id = d.id
@@ -146,23 +154,18 @@ const updateOrderItemStatus = async (req, res) => {
     }
 
     const item = itemResult.rows[0];
-
-    // Check if there's sufficient stock when approving
-    if (status === 'approved') {
-      const stockCheck = await db.query(
-        `SELECT stock FROM drugs WHERE id = $1`,
-        [item.drug_id]
-      );
-
-      if (stockCheck.rows[0].stock < item.quantity) {
-        return res.status(400).json({
-          status: false,
-          message: 'Insufficient stock to approve this item',
-        });
-      }
-    }
+    const newQuantity = quantity ? parseInt(quantity) : item.original_quantity;
 
     await db.query('BEGIN');
+
+    // Update quantity if provided and status is being changed to approved/shipped
+    if (quantity && ['approved', 'shipped'].includes(status)) {
+      await db.query(
+        `UPDATE order_items SET quantity = $1, updated_at = NOW() 
+         WHERE id = $2`,
+        [newQuantity, orderItemId]
+      );
+    }
 
     // Update status
     await db.query(
@@ -174,15 +177,15 @@ const updateOrderItemStatus = async (req, res) => {
     // Handle stock updates based on status changes
     if (item.drug_id) {
       if (status === 'approved' && item.current_status !== 'approved') {
-        // Deduct stock only when approving for the first time
+        // Deduct new quantity when approving for the first time
         await db.query(`UPDATE drugs SET stock = stock - $1 WHERE id = $2`, [
-          item.quantity,
+          newQuantity,
           item.drug_id,
         ]);
       } else if (status === 'rejected' && item.current_status === 'approved') {
-        // Restore stock when rejecting previously approved item
+        // Restore original quantity when rejecting previously approved item
         await db.query(`UPDATE drugs SET stock = stock + $1 WHERE id = $2`, [
-          item.quantity,
+          item.original_quantity,
           item.drug_id,
         ]);
       }
@@ -192,14 +195,14 @@ const updateOrderItemStatus = async (req, res) => {
 
     res.json({
       status: true,
-      message: 'Order item status updated successfully',
+      message: 'Order item updated successfully',
     });
   } catch (err) {
     await db.query('ROLLBACK');
     console.error('Database error in updateOrderItemStatus:', err);
     res.status(500).json({
       status: false,
-      message: 'Server error while updating order item status',
+      message: 'Server error while updating order item',
       error: err.message,
     });
   }
