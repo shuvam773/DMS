@@ -1,15 +1,13 @@
 import React, { useContext, useState } from 'react';
 import {
   FiHome,
-  FiUsers,
   FiPackage,
-  FiShoppingBag,
   FiSettings,
   FiLogOut,
   FiChevronLeft,
   FiLoader,
 } from 'react-icons/fi';
-import { FaRegHospital, FaPills } from 'react-icons/fa';
+import { FaRegHospital, FaPills, FaPlusCircle} from 'react-icons/fa';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import InstitutesTable from './users/InstitutesTable';
 import DrugsTable from './drugs/DrugsTable';
@@ -20,7 +18,8 @@ import { MdBorderColor } from 'react-icons/md';
 import ProfileModal from '../ProfileModal';
 import AdminOrderHistory from './orders/AdminOrderHistory';
 import api from '../../../api/api';
-import { NavLink, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import DrugManagement from './drugs/DrugManagement';
 
 const AdminPage = () => {
   const { user, logout } = useContext(UserContext);
@@ -28,7 +27,6 @@ const AdminPage = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileDetails, setProfileDetails] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
-  const location = useLocation();
 
   const fetchProfileDetails = async () => {
     try {
@@ -114,6 +112,7 @@ const AdminPage = () => {
               { id: 'dashboard', icon: <FiHome />, label: 'Dashboard', to: 'dashboard' },
               { id: 'institutes', icon: <FaRegHospital />, label: 'Users', to: 'institutes' },
               { id: 'drugs', icon: <FaPills />, label: 'Drugs', to: 'drugs' },
+              { id: 'drug-management', icon: <FaPlusCircle />, label: 'Drug Types', to: 'drug-management' },
               { id: 'orders-history', icon: <MdBorderColor />, label: 'Orders', to: 'orders-history' },
               { id: 'settings', icon: <FiSettings />, label: 'Settings', to: 'settings' },
             ].map((item) => (
@@ -184,6 +183,7 @@ const AdminPage = () => {
               <Route path="dashboard" element={<AnalyticsDashboard />} />
               <Route path="institutes" element={<InstitutesTable />} />
               <Route path="drugs" element={<DrugsTable />} />
+              <Route path="drug-management" element={<DrugManagement />} />
               <Route path="orders-history" element={<AdminOrderHistory />} />
               <Route path="settings" element={<AdminSettings />} />
             </Routes>

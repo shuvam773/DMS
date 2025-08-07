@@ -75,7 +75,20 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 
 
+-- Create drug_types table
+CREATE TABLE drug_types (
+  id SERIAL PRIMARY KEY,
+  type_name VARCHAR(100) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-
-
-
+-- Create drug_names table
+CREATE TABLE drug_names (
+  id SERIAL PRIMARY KEY,
+  type_id INTEGER REFERENCES drug_types(id) ON DELETE CASCADE,
+  name VARCHAR(200) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(type_id, name)
+);

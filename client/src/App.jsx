@@ -11,6 +11,7 @@ import InstitutePage from './components/pages/institute/InstitutePage';
 import PharmacyPage from './components/pages/pharmacy/PharmacyPage';
 import { ToastContainer } from 'react-toastify';
 import Chatbot from './components/chatbot/Chatbot';
+import DrugManagement from './components/pages/admin/drugs/DrugManagement';
 const App = () => {
   return (
     <BrowserRouter>
@@ -34,6 +35,7 @@ const App = () => {
             <Route path="dashboard" element={<AdminPage type="dashboard" />} />
             <Route path="institutes" element={<AdminPage type="institutes" />} />
             <Route path="drugs" element={<AdminPage type="drugs" />} />
+            <Route path="drug-management" element={<AdminPage type="drug-management" />} />
             <Route path="orders-history" element={<AdminPage type="orders-history" />} />
             <Route path="settings" element={<AdminPage type="settings" />} />
           </Route>

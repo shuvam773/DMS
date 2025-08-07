@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiFilter, FiX, FiSave, FiCheck, FiXCircle } from 'react-icons/fi';
+import { 
+  FiEdit2, FiTrash2, FiPlus, FiSearch, FiFilter, FiX, 
+  FiSave, FiCheck, FiXCircle 
+} from 'react-icons/fi';
 import { FaPills, FaExclamationTriangle } from 'react-icons/fa';
-import { DRUG_TYPES } from '../../../../constants/drugTypes';
-import { DRUG_NAMES } from '../../../../constants/drugNames';
 import api from '../../../../api/api';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const DrugsTable = () => {
   const [drugs, setDrugs] = useState([]);
@@ -17,7 +20,8 @@ const DrugsTable = () => {
     lowStock: false,
     priceRange: ['', ''],
     category: '',
-    drugType: ''
+    drugType: '',
+    expDateRange: [null, null],
   });
   const [editingId, setEditingId] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -32,27 +36,43 @@ const DrugsTable = () => {
     drug_type: '',
     category: '',
   });
+
+  // State for drug types and names from database
+  const [drugTypes, setDrugTypes] = useState([]);
   const [availableDrugNames, setAvailableDrugNames] = useState([]);
 
-  const isExpiringSoon = (expDate) => {
-    const expirationDate = new Date(expDate);
-    const threeMonthsFromNow = new Date();
-    threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
-    return expirationDate <= threeMonthsFromNow;
+  // Fetch drug types from database
+  const fetchDrugTypes = async () => {
+    try {
+      const response = await api.get('/drug-types-names/drug-types');
+      if (response.data.status) {
+        setDrugTypes(response.data.drugTypes);
+      }
+    } catch (error) {
+      console.error('Error fetching drug types:', error);
+      toast.error('Failed to load drug types');
+    }
   };
 
-  useEffect(() => {
-    fetchDrugs();
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [drugs, searchTerm, filters]);
+  // Fetch drug names by type from database
+  const fetchDrugNamesByType = async (typeId) => {
+    try {
+      const response = await api.get(`/drug-types-names/drug-names/${typeId}`);
+      if (response.data.status) {
+        setAvailableDrugNames(response.data.drugNames.map(item => item.name));
+      } else {
+        setAvailableDrugNames([]);
+      }
+    } catch (error) {
+      console.error('Error fetching drug names:', error);
+      setAvailableDrugNames([]);
+    }
+  };
 
   const fetchDrugs = async () => {
     setIsLoading(true);
     try {
-      const response = await api.get('/drugs'); 
+      const response = await api.get('/drugs');
       
       if (response.data && Array.isArray(response.data.drugs)) {
         setDrugs(response.data.drugs);
@@ -63,11 +83,28 @@ const DrugsTable = () => {
       }
     } catch (error) {
       console.error('Error fetching drugs:', error);
-      toast.error('Failed to load drugs');
+      toast.error(error.response?.data?.message || 'Failed to load drugs');
       setDrugs([]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchDrugTypes();
+    fetchDrugs();
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [drugs, searchTerm, filters]);
+
+  const isExpiringSoon = (expDate) => {
+    if (!expDate) return false;
+    const expirationDate = new Date(expDate);
+    const threeMonthsFromNow = new Date();
+    threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
+    return expirationDate <= threeMonthsFromNow;
   };
 
   const applyFilters = () => {
@@ -109,6 +146,19 @@ const DrugsTable = () => {
       result = result.filter(drug => drug.drug_type === filters.drugType);
     }
 
+    if (filters.expDateRange[0] || filters.expDateRange[1]) {
+      result = result.filter(drug => {
+        if (!drug.exp_date) return false;
+        const expDate = new Date(drug.exp_date);
+        const startDate = filters.expDateRange[0] ? new Date(filters.expDateRange[0]) : null;
+        const endDate = filters.expDateRange[1] ? new Date(filters.expDateRange[1]) : null;
+
+        if (startDate && expDate < startDate) return false;
+        if (endDate && expDate > endDate) return false;
+        return true;
+      });
+    }
+
     setFilteredDrugs(result);
   };
 
@@ -135,13 +185,15 @@ const DrugsTable = () => {
       lowStock: false,
       priceRange: ['', ''],
       category: '',
-      drugType: ''
+      drugType: '',
+      expDateRange: [null, null],
     });
     setSearchTerm('');
   };
 
   const handleDrugTypeChange = (e, isEditing = false, drugId = null) => {
     const { value } = e.target;
+    const selectedType = drugTypes.find(type => type.type_name === value);
     
     if (isEditing) {
       handleDrugChange(drugId, e);
@@ -149,7 +201,11 @@ const DrugsTable = () => {
       handleAddChange(e);
     }
     
-    setAvailableDrugNames(DRUG_NAMES[value] || []);
+    if (selectedType) {
+      fetchDrugNamesByType(selectedType.id);
+    } else {
+      setAvailableDrugNames([]);
+    }
     
     if (isEditing) {
       handleDrugChange(drugId, { target: { name: 'name', value: '' } });
@@ -160,7 +216,10 @@ const DrugsTable = () => {
 
   const handleEdit = (drug) => {
     setEditingId(drug.id);
-    setAvailableDrugNames(DRUG_NAMES[drug.drug_type] || []);
+    const selectedType = drugTypes.find(type => type.type_name === drug.drug_type);
+    if (selectedType) {
+      fetchDrugNamesByType(selectedType.id);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -210,14 +269,15 @@ const DrugsTable = () => {
       }
 
       setIsLoading(true);
-      await api.post('/drugs', newDrug); // Use api instead of axios
+      await api.post('/drugs', newDrug);
 
       toast.success('Drug added successfully!');
       fetchDrugs();
       setIsAdding(false);
+      setAvailableDrugNames([]);
     } catch (error) {
       console.error('Error adding drug:', error);
-      toast.error(error.response?.data?.error || 'Failed to add drug');
+      toast.error(error.response?.data?.message || 'Failed to add drug');
     } finally {
       setIsLoading(false);
     }
@@ -234,7 +294,7 @@ const DrugsTable = () => {
       }
 
       setIsLoading(true);
-      await api.put(`/drugs/${id}`, { // Use api instead of axios
+      await api.put(`/drugs/${id}`, {
         name: drugToUpdate.name,
         description: drugToUpdate.description,
         stock: drugToUpdate.stock,
@@ -246,10 +306,11 @@ const DrugsTable = () => {
 
       toast.success('Drug updated successfully!');
       setEditingId(null);
+      setAvailableDrugNames([]);
       fetchDrugs();
     } catch (error) {
       console.error('Error updating drug:', error);
-      toast.error(error.response?.data?.error || 'Failed to update drug');
+      toast.error(error.response?.data?.message || 'Failed to update drug');
     } finally {
       setIsLoading(false);
     }
@@ -261,13 +322,12 @@ const DrugsTable = () => {
     }
 
     try {
-      await api.delete(`/drugs/${id}`); // Use api instead of axios
-      
+      await api.delete(`/drugs/${id}`);
       toast.success('Drug deleted successfully');
       fetchDrugs();
     } catch (error) {
       console.error('Error deleting drug:', error);
-      toast.error(error.response?.data?.error || 'Failed to delete drug');
+      toast.error(error.response?.data?.message || 'Failed to delete drug');
     }
   };
 
@@ -327,7 +387,9 @@ const DrugsTable = () => {
                filters.category || 
                filters.drugType ||
                filters.priceRange[0] || 
-               filters.priceRange[1]) && (
+               filters.priceRange[1] ||
+               filters.expDateRange[0] ||
+               filters.expDateRange[1]) && (
                 <button
                   onClick={resetFilters}
                   className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
@@ -427,6 +489,46 @@ const DrugsTable = () => {
                     ))}
                   </select>
                 </div>
+
+                {/* Date Range Picker */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Expiration Date Range
+                  </label>
+                  <div className="flex flex-col space-y-2">
+                    <DatePicker
+                      selected={filters.expDateRange[0]}
+                      onChange={(date) => 
+                        setFilters(prev => ({
+                          ...prev,
+                          expDateRange: [date, prev.expDateRange[1]]
+                        }))
+                      }
+                      selectsStart
+                      startDate={filters.expDateRange[0]}
+                      endDate={filters.expDateRange[1]}
+                      placeholderText="Start Date"
+                      className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                      isClearable
+                    />
+                    <DatePicker
+                      selected={filters.expDateRange[1]}
+                      onChange={(date) => 
+                        setFilters(prev => ({
+                          ...prev,
+                          expDateRange: [prev.expDateRange[0], date]
+                        }))
+                      }
+                      selectsEnd
+                      startDate={filters.expDateRange[0]}
+                      endDate={filters.expDateRange[1]}
+                      minDate={filters.expDateRange[0]}
+                      placeholderText="End Date"
+                      className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                      isClearable
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -467,8 +569,8 @@ const DrugsTable = () => {
                           required
                         >
                           <option value="">Select Type</option>
-                          {DRUG_TYPES.map(type => (
-                            <option key={type} value={type}>{type}</option>
+                          {drugTypes.map(type => (
+                            <option key={type.id} value={type.type_name}>{type.type_name}</option>
                           ))}
                         </select>
                       </td>
@@ -611,8 +713,8 @@ const DrugsTable = () => {
                                 required
                               >
                                 <option value="">Select Type</option>
-                                {DRUG_TYPES.map(type => (
-                                  <option key={type} value={type}>{type}</option>
+                                {drugTypes.map(type => (
+                                  <option key={type.id} value={type.type_name}>{type.type_name}</option>
                                 ))}
                               </select>
                             ) : (

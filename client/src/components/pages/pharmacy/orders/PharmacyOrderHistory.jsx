@@ -49,7 +49,8 @@ const PharmacyOrderHistory = () => {
         limit,
       };
 
-      if (statusFilter !== 'all') {
+      // Only add status filter if not 'all'
+      if (statusFilter && statusFilter !== 'all') {
         params.status = statusFilter;
       }
 
@@ -350,7 +351,7 @@ const PharmacyOrderHistory = () => {
                     >
                       <div>
                         <p className="font-medium">{item.drug_name}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-black">
                           Qty: {item.quantity} | Price: ₹
                           {parseFloat(item.unit_price).toFixed(2)}
                         </p>
