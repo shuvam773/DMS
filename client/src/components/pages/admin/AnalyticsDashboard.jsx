@@ -256,13 +256,14 @@ const AnalyticsDashboard = () => {
 
   // New institute revenue chart data
   const instituteRevenueData = {
-    labels: chartsData.instituteRevenue?.map(item => 
-      user?.role === 'admin' ? item.institute_name : item.pharmacy_name
-    ) || [],
+    labels:
+      chartsData.instituteRevenue?.map((item) =>
+        user?.role === 'admin' ? item.institute_name : item.pharmacy_name
+      ) || [],
     datasets: [
       {
         label: 'Revenue (₹)',
-        data: chartsData.instituteRevenue?.map(item => item.revenue) || [],
+        data: chartsData.instituteRevenue?.map((item) => item.revenue) || [],
         backgroundColor: [
           '#3B82F6',
           '#10B981',
@@ -334,7 +335,7 @@ const AnalyticsDashboard = () => {
                     : ''
                 }`}
               >
-                <FiPieChart className="mr-1 sm:mr-2" /> 
+                <FiPieChart className="mr-1 sm:mr-2" />
                 <span className="whitespace-nowrap">Overview</span>
               </div>
             </Tab>
@@ -346,7 +347,7 @@ const AnalyticsDashboard = () => {
                     : ''
                 }`}
               >
-                <FiTrendingUp className="mr-1 sm:mr-2" /> 
+                <FiTrendingUp className="mr-1 sm:mr-2" />
                 <span className="whitespace-nowrap">Trends</span>
               </div>
             </Tab>
@@ -358,7 +359,7 @@ const AnalyticsDashboard = () => {
                     : ''
                 }`}
               >
-                <FaExclamationTriangle className="mr-1 sm:mr-2" /> 
+                <FaExclamationTriangle className="mr-1 sm:mr-2" />
                 <span className="whitespace-nowrap">Expiring Drugs</span>
               </div>
             </Tab>
@@ -497,7 +498,9 @@ const AnalyticsDashboard = () => {
                                 autoSkip: false,
                                 font: { size: 10 },
                                 callback: (value) => {
-                                  const label = drugTypesData.labels?.[value] ?? String(value);
+                                  const label =
+                                    drugTypesData.labels?.[value] ??
+                                    String(value);
                                   return label.length > 16
                                     ? label.slice(0, 16) + '…'
                                     : label;
@@ -619,23 +622,34 @@ const AnalyticsDashboard = () => {
             <div className="mt-4">
               <div className="grid grid-cols-1 gap-4 mb-6">
                 {/* Institute Revenue Chart - New Chart */}
+                {/* Institute Revenue Chart - New Chart */}
                 <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
                   <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
-                    {user?.role === 'admin' ? 'Institute-wise Revenue' : 'Pharmacy-wise Revenue'}
+                    {user?.role === 'admin'
+                      ? 'Institute-wise Revenue'
+                      : 'Pharmacy-wise Revenue'}
                   </h3>
                   {chartsData.loading ? (
                     <div className="flex justify-center items-center h-72 sm:h-96">
                       <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                    <div className="h-72 sm:h-96">
+                    <div
+                      style={{
+                        height: Math.max(
+                          240,
+                          (instituteRevenueData.labels?.length || 0) * 28
+                        ),
+                      }}
+                    >
                       <Bar
                         data={instituteRevenueData}
                         options={{
                           responsive: true,
                           maintainAspectRatio: false,
+                          indexAxis: 'y', // Make it horizontal
                           scales: {
-                            y: {
+                            x: {
                               beginAtZero: true,
                               ticks: {
                                 callback: function (value) {
@@ -643,14 +657,31 @@ const AnalyticsDashboard = () => {
                                 },
                               },
                             },
+                            y: {
+                              ticks: {
+                                autoSkip: false,
+                                font: { size: 10 },
+                                callback: (value) => {
+                                  const label =
+                                    instituteRevenueData.labels?.[value] ??
+                                    String(value);
+                                  return label.length > 16
+                                    ? label.slice(0, 16) + '…'
+                                    : label;
+                                },
+                              },
+                            },
                           },
                           plugins: {
+                            legend: {
+                              display: false,
+                            },
                             tooltip: {
                               callbacks: {
                                 label: function (context) {
                                   return (
                                     'Revenue: ₹' +
-                                    context.parsed.y.toLocaleString()
+                                    context.parsed.x.toLocaleString()
                                   );
                                 },
                               },
@@ -882,7 +913,10 @@ const AnalyticsDashboard = () => {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="6" className="px-4 sm:px-6 py-8 text-center">
+                              <td
+                                colSpan="6"
+                                className="px-4 sm:px-6 py-8 text-center"
+                              >
                                 <div className="flex flex-col items-center justify-center text-gray-500">
                                   <FaExclamationTriangle className="h-8 w-8 sm:h-10 sm:w-10 mb-2 text-yellow-400" />
                                   <h4 className="text-base sm:text-lg font-medium">
@@ -1065,16 +1099,22 @@ const StatCard = ({ icon, title, value, loading, color = 'blue' }) => {
       className={`${selectedColor.bg} p-4 sm:p-5 rounded-lg shadow-sm border border-gray-200 transition-all hover:shadow-md`}
     >
       <div className="flex items-start">
-        <div className={`${selectedColor.iconBg} p-2 sm:p-3 rounded-lg mr-3 sm:mr-4`}>
+        <div
+          className={`${selectedColor.iconBg} p-2 sm:p-3 rounded-lg mr-3 sm:mr-4`}
+        >
           {icon}
         </div>
         <div className="flex-1">
-          <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">{title}</p>
+          <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">
+            {title}
+          </p>
           {loading ? (
             <div className="h-6 sm:h-8 w-16 sm:w-20 bg-gray-200 rounded animate-pulse"></div>
           ) : (
             <div className="flex items-end justify-between">
-              <h3 className={`text-xl sm:text-2xl font-bold ${selectedColor.text}`}>
+              <h3
+                className={`text-xl sm:text-2xl font-bold ${selectedColor.text}`}
+              >
                 {value}
               </h3>
             </div>
