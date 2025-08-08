@@ -415,7 +415,7 @@ const DrugsTable = () => {
           <button
             onClick={handleAddNew}
             disabled={isAdding}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400"
+            className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
           >
             <FiPlus className="mr-2" />
             Add New Drug

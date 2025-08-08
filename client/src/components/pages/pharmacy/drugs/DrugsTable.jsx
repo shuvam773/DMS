@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { 
-  FiEdit2, FiTrash2, FiPlus, FiSearch, FiFilter, FiX, 
-  FiSave, FiCheck, FiXCircle 
+import {
+  FiEdit2,
+  FiTrash2,
+  FiPlus,
+  FiSearch,
+  FiFilter,
+  FiX,
+  FiSave,
+  FiCheck,
+  FiXCircle,
 } from 'react-icons/fi';
 import { FaPills, FaExclamationTriangle } from 'react-icons/fa';
 import api from '../../../../api/api';
@@ -67,7 +74,7 @@ const DrugsTable = () => {
     try {
       const response = await api.get(`/drug-types-names/drug-names/${typeId}`);
       if (response.data.status) {
-        setAvailableDrugNames(response.data.drugNames.map(item => item.name));
+        setAvailableDrugNames(response.data.drugNames.map((item) => item.name));
       } else {
         setAvailableDrugNames([]);
       }
@@ -81,7 +88,7 @@ const DrugsTable = () => {
     setIsLoading(true);
     try {
       const response = await api.get('/drugs');
-      
+
       if (response.data && Array.isArray(response.data.drugs)) {
         setDrugs(response.data.drugs);
       } else {
@@ -120,46 +127,54 @@ const DrugsTable = () => {
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(drug => 
-        drug.name.toLowerCase().includes(term) ||
-        drug.batch_no?.toLowerCase().includes(term) ||
-        drug.description?.toLowerCase().includes(term) ||
-        drug.drug_type?.toLowerCase().includes(term) ||
-        drug.category?.toLowerCase().includes(term)
+      result = result.filter(
+        (drug) =>
+          drug.name.toLowerCase().includes(term) ||
+          drug.batch_no?.toLowerCase().includes(term) ||
+          drug.description?.toLowerCase().includes(term) ||
+          drug.drug_type?.toLowerCase().includes(term) ||
+          drug.category?.toLowerCase().includes(term)
       );
     }
 
     if (filters.expiringSoon) {
-      result = result.filter(drug => isExpiringSoon(drug.exp_date));
+      result = result.filter((drug) => isExpiringSoon(drug.exp_date));
     }
 
     if (filters.lowStock) {
-      result = result.filter(drug => drug.stock <= 10);
+      result = result.filter((drug) => drug.stock <= 10);
     }
 
     if (filters.priceRange[0] || filters.priceRange[1]) {
-      const minPrice = filters.priceRange[0] ? parseFloat(filters.priceRange[0]) : 0;
-      const maxPrice = filters.priceRange[1] ? parseFloat(filters.priceRange[1]) : Infinity;
-      result = result.filter(drug => 
-        drug.price >= minPrice && 
-        drug.price <= maxPrice
+      const minPrice = filters.priceRange[0]
+        ? parseFloat(filters.priceRange[0])
+        : 0;
+      const maxPrice = filters.priceRange[1]
+        ? parseFloat(filters.priceRange[1])
+        : Infinity;
+      result = result.filter(
+        (drug) => drug.price >= minPrice && drug.price <= maxPrice
       );
     }
 
     if (filters.category) {
-      result = result.filter(drug => drug.category === filters.category);
+      result = result.filter((drug) => drug.category === filters.category);
     }
 
     if (filters.drugType) {
-      result = result.filter(drug => drug.drug_type === filters.drugType);
+      result = result.filter((drug) => drug.drug_type === filters.drugType);
     }
 
     if (filters.expDateRange[0] || filters.expDateRange[1]) {
-      result = result.filter(drug => {
+      result = result.filter((drug) => {
         if (!drug.exp_date) return false;
         const expDate = new Date(drug.exp_date);
-        const startDate = filters.expDateRange[0] ? new Date(filters.expDateRange[0]) : null;
-        const endDate = filters.expDateRange[1] ? new Date(filters.expDateRange[1]) : null;
+        const startDate = filters.expDateRange[0]
+          ? new Date(filters.expDateRange[0])
+          : null;
+        const endDate = filters.expDateRange[1]
+          ? new Date(filters.expDateRange[1])
+          : null;
 
         if (startDate && expDate < startDate) return false;
         if (endDate && expDate > endDate) return false;
@@ -170,11 +185,11 @@ const DrugsTable = () => {
     // Update pagination
     const total = result.length;
     const totalPages = Math.ceil(total / pagination.limit);
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
       total,
       totalPages,
-      page: prev.page > totalPages ? 1 : prev.page
+      page: prev.page > totalPages ? 1 : prev.page,
     }));
 
     setFilteredDrugs(result);
@@ -188,23 +203,23 @@ const DrugsTable = () => {
   };
 
   const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
   const handleFilterChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
   const handlePriceRangeChange = (index, value) => {
     const newRange = [...filters.priceRange];
     newRange[index] = value;
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      priceRange: newRange
+      priceRange: newRange,
     }));
   };
 
@@ -222,30 +237,32 @@ const DrugsTable = () => {
 
   const handleDrugTypeChange = (e, isEditing = false, drugId = null) => {
     const { value } = e.target;
-    const selectedType = drugTypes.find(type => type.type_name === value);
-    
+    const selectedType = drugTypes.find((type) => type.type_name === value);
+
     if (isEditing) {
       handleDrugChange(drugId, e);
     } else {
       handleAddChange(e);
     }
-    
+
     if (selectedType) {
       fetchDrugNamesByType(selectedType.id);
     } else {
       setAvailableDrugNames([]);
     }
-    
+
     if (isEditing) {
       handleDrugChange(drugId, { target: { name: 'name', value: '' } });
     } else {
-      setNewDrug(prev => ({ ...prev, name: '' }));
+      setNewDrug((prev) => ({ ...prev, name: '' }));
     }
   };
 
   const handleEdit = (drug) => {
     setEditingId(drug.id);
-    const selectedType = drugTypes.find(type => type.type_name === drug.drug_type);
+    const selectedType = drugTypes.find(
+      (type) => type.type_name === drug.drug_type
+    );
     if (selectedType) {
       fetchDrugNamesByType(selectedType.id);
     }
@@ -279,9 +296,9 @@ const DrugsTable = () => {
 
   const handleAddChange = (e) => {
     const { name, value } = e.target;
-    setNewDrug(prev => ({
+    setNewDrug((prev) => ({
       ...prev,
-      [name]: name === 'stock' || name === 'price' ? Number(value) : value
+      [name]: name === 'stock' || name === 'price' ? Number(value) : value,
     }));
   };
 
@@ -314,10 +331,14 @@ const DrugsTable = () => {
 
   const handleUpdate = async (id) => {
     try {
-      const drugToUpdate = drugs.find(drug => drug.id === id);
+      const drugToUpdate = drugs.find((drug) => drug.id === id);
       if (!drugToUpdate) return;
 
-      if (!drugToUpdate.batch_no || !drugToUpdate.drug_type || !drugToUpdate.name) {
+      if (
+        !drugToUpdate.batch_no ||
+        !drugToUpdate.drug_type ||
+        !drugToUpdate.name
+      ) {
         toast.error('Batch number, drug type and name are required');
         return;
       }
@@ -362,13 +383,25 @@ const DrugsTable = () => {
 
   const handleDrugChange = (id, e) => {
     const { name, value } = e.target;
-    setDrugs(prev => prev.map(drug => 
-      drug.id === id ? { ...drug, [name]: name === 'stock' || name === 'price' ? Number(value) : value } : drug
-    ));
+    setDrugs((prev) =>
+      prev.map((drug) =>
+        drug.id === id
+          ? {
+              ...drug,
+              [name]:
+                name === 'stock' || name === 'price' ? Number(value) : value,
+            }
+          : drug
+      )
+    );
   };
 
-  const uniqueCategories = [...new Set(drugs.map(drug => drug.category).filter(Boolean))];
-  const uniqueDrugTypes = [...new Set(drugs.map(drug => drug.drug_type).filter(Boolean))];
+  const uniqueCategories = [
+    ...new Set(drugs.map((drug) => drug.category).filter(Boolean)),
+  ];
+  const uniqueDrugTypes = [
+    ...new Set(drugs.map((drug) => drug.drug_type).filter(Boolean)),
+  ];
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -381,7 +414,7 @@ const DrugsTable = () => {
           <button
             onClick={handleAddNew}
             disabled={isAdding}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400"
+            className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
           >
             <FiPlus className="mr-2" />
             Add New Drug
@@ -411,14 +444,14 @@ const DrugsTable = () => {
                 <FiFilter className="mr-2" />
                 Filters
               </button>
-              {(filters.expiringSoon || 
-               filters.lowStock || 
-               filters.category || 
-               filters.drugType ||
-               filters.priceRange[0] || 
-               filters.priceRange[1] ||
-               filters.expDateRange[0] ||
-               filters.expDateRange[1]) && (
+              {(filters.expiringSoon ||
+                filters.lowStock ||
+                filters.category ||
+                filters.drugType ||
+                filters.priceRange[0] ||
+                filters.priceRange[1] ||
+                filters.expDateRange[0] ||
+                filters.expDateRange[1]) && (
                 <button
                   onClick={resetFilters}
                   className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
@@ -443,7 +476,10 @@ const DrugsTable = () => {
                     onChange={handleFilterChange}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="expiringSoon" className="ml-2 text-sm text-gray-700">
+                  <label
+                    htmlFor="expiringSoon"
+                    className="ml-2 text-sm text-gray-700"
+                  >
                     Expiring Soon (≤ 3 months)
                   </label>
                 </div>
@@ -457,18 +493,25 @@ const DrugsTable = () => {
                     onChange={handleFilterChange}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="lowStock" className="ml-2 text-sm text-gray-700">
+                  <label
+                    htmlFor="lowStock"
+                    className="ml-2 text-sm text-gray-700"
+                  >
                     Low Stock (≤ 10)
                   </label>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Price Range
+                  </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
                       value={filters.priceRange[0]}
-                      onChange={(e) => handlePriceRangeChange(0, e.target.value)}
+                      onChange={(e) =>
+                        handlePriceRangeChange(0, e.target.value)
+                      }
                       className="w-20 px-2 py-1 border border-gray-300 rounded-md"
                       placeholder="Min"
                     />
@@ -476,7 +519,9 @@ const DrugsTable = () => {
                     <input
                       type="number"
                       value={filters.priceRange[1]}
-                      onChange={(e) => handlePriceRangeChange(1, e.target.value)}
+                      onChange={(e) =>
+                        handlePriceRangeChange(1, e.target.value)
+                      }
                       className="w-20 px-2 py-1 border border-gray-300 rounded-md"
                       placeholder="Max"
                     />
@@ -484,7 +529,10 @@ const DrugsTable = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="category"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Category
                   </label>
                   <select
@@ -495,14 +543,19 @@ const DrugsTable = () => {
                     className="w-full px-2 py-1 border border-gray-300 rounded-md"
                   >
                     <option value="">All Categories</option>
-                    {uniqueCategories.map(category => (
-                      <option key={category} value={category}>{category}</option>
+                    {uniqueCategories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label htmlFor="drugType" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="drugType"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Drug Type
                   </label>
                   <select
@@ -513,8 +566,10 @@ const DrugsTable = () => {
                     className="w-full px-2 py-1 border border-gray-300 rounded-md"
                   >
                     <option value="">All Types</option>
-                    {uniqueDrugTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
+                    {uniqueDrugTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -527,10 +582,10 @@ const DrugsTable = () => {
                   <div className="flex flex-col space-y-2">
                     <DatePicker
                       selected={filters.expDateRange[0]}
-                      onChange={(date) => 
-                        setFilters(prev => ({
+                      onChange={(date) =>
+                        setFilters((prev) => ({
                           ...prev,
-                          expDateRange: [date, prev.expDateRange[1]]
+                          expDateRange: [date, prev.expDateRange[1]],
                         }))
                       }
                       selectsStart
@@ -542,10 +597,10 @@ const DrugsTable = () => {
                     />
                     <DatePicker
                       selected={filters.expDateRange[1]}
-                      onChange={(date) => 
-                        setFilters(prev => ({
+                      onChange={(date) =>
+                        setFilters((prev) => ({
                           ...prev,
-                          expDateRange: [prev.expDateRange[0], date]
+                          expDateRange: [prev.expDateRange[0], date],
                         }))
                       }
                       selectsEnd
@@ -573,16 +628,36 @@ const DrugsTable = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Batch No</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Description</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">MFG Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">EXP Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Price</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Stock</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Category</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Batch No
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Description
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      MFG Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      EXP Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Price
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Stock
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -598,8 +673,10 @@ const DrugsTable = () => {
                           required
                         >
                           <option value="">Select Type</option>
-                          {drugTypes.map(type => (
-                            <option key={type.id} value={type.type_name}>{type.type_name}</option>
+                          {drugTypes.map((type) => (
+                            <option key={type.id} value={type.type_name}>
+                              {type.type_name}
+                            </option>
                           ))}
                         </select>
                       </td>
@@ -613,8 +690,10 @@ const DrugsTable = () => {
                             required
                           >
                             <option value="">Select Name</option>
-                            {availableDrugNames.map(name => (
-                              <option key={name} value={name}>{name}</option>
+                            {availableDrugNames.map((name) => (
+                              <option key={name} value={name}>
+                                {name}
+                              </option>
                             ))}
                           </select>
                         ) : (
@@ -729,42 +808,63 @@ const DrugsTable = () => {
                     getPaginatedDrugs().map((drug) => {
                       const expiringSoon = isExpiringSoon(drug.exp_date);
                       const isEditing = editingId === drug.id;
-                      
+
                       return (
-                        <tr key={drug.id} className={`hover:bg-gray-50 transition-colors ${isEditing ? 'bg-yellow-50' : ''}`}>
+                        <tr
+                          key={drug.id}
+                          className={`hover:bg-gray-50 transition-colors ${
+                            isEditing ? 'bg-yellow-50' : ''
+                          }`}
+                        >
                           <td className="px-6 py-4 whitespace-nowrap">
                             {isEditing ? (
                               <select
                                 name="drug_type"
                                 value={drug.drug_type}
-                                onChange={(e) => handleDrugTypeChange(e, true, drug.id)}
+                                onChange={(e) =>
+                                  handleDrugTypeChange(e, true, drug.id)
+                                }
                                 className="w-full px-2 py-1 border border-gray-300 rounded-md"
                                 required
                               >
                                 <option value="">Select Type</option>
-                                {drugTypes.map(type => (
-                                  <option key={type.id} value={type.type_name}>{type.type_name}</option>
+                                {drugTypes.map((type) => (
+                                  <option key={type.id} value={type.type_name}>
+                                    {type.type_name}
+                                  </option>
                                 ))}
                               </select>
                             ) : (
-                              <span className="text-sm text-gray-500">{drug.drug_type}</span>
+                              <span className="text-sm text-gray-500">
+                                {drug.drug_type}
+                              </span>
                             )}
                           </td>
-                          <td className={`px-6 py-4 whitespace-nowrap ${expiringSoon ? 'text-red-600' : 'text-gray-900'}`}>
+                          <td
+                            className={`px-6 py-4 whitespace-nowrap ${
+                              expiringSoon ? 'text-red-600' : 'text-gray-900'
+                            }`}
+                          >
                             <div className="flex items-center">
-                              {expiringSoon && <FaExclamationTriangle className="mr-2 text-red-500" />}
+                              {expiringSoon && (
+                                <FaExclamationTriangle className="mr-2 text-red-500" />
+                              )}
                               {isEditing ? (
                                 availableDrugNames.length > 0 ? (
                                   <select
                                     name="name"
                                     value={drug.name}
-                                    onChange={(e) => handleDrugChange(drug.id, e)}
+                                    onChange={(e) =>
+                                      handleDrugChange(drug.id, e)
+                                    }
                                     className="w-full px-2 py-1 border border-gray-300 rounded-md"
                                     required
                                   >
                                     <option value="">Select Name</option>
-                                    {availableDrugNames.map(name => (
-                                      <option key={name} value={name}>{name}</option>
+                                    {availableDrugNames.map((name) => (
+                                      <option key={name} value={name}>
+                                        {name}
+                                      </option>
                                     ))}
                                   </select>
                                 ) : (
@@ -772,13 +872,17 @@ const DrugsTable = () => {
                                     type="text"
                                     name="name"
                                     value={drug.name}
-                                    onChange={(e) => handleDrugChange(drug.id, e)}
+                                    onChange={(e) =>
+                                      handleDrugChange(drug.id, e)
+                                    }
                                     className="w-full px-2 py-1 border border-gray-300 rounded-md"
                                     required
                                   />
                                 )
                               ) : (
-                                <span className="text-sm font-medium">{drug.name}</span>
+                                <span className="text-sm font-medium">
+                                  {drug.name}
+                                </span>
                               )}
                             </div>
                           </td>
@@ -793,7 +897,9 @@ const DrugsTable = () => {
                                 required
                               />
                             ) : (
-                              <span className="text-sm text-gray-500">{drug.batch_no}</span>
+                              <span className="text-sm text-gray-500">
+                                {drug.batch_no}
+                              </span>
                             )}
                           </td>
                           <td className="px-6 py-4">
@@ -806,7 +912,9 @@ const DrugsTable = () => {
                                 className="w-full px-2 py-1 border border-gray-300 rounded-md"
                               />
                             ) : (
-                              <span className="text-sm text-gray-500 max-w-xs truncate">{drug.description}</span>
+                              <span className="text-sm text-gray-500 max-w-xs truncate">
+                                {drug.description}
+                              </span>
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -814,7 +922,13 @@ const DrugsTable = () => {
                               {new Date(drug.mfg_date).toLocaleDateString()}
                             </span>
                           </td>
-                          <td className={`px-6 py-4 whitespace-nowrap ${expiringSoon ? 'font-semibold text-red-600' : 'text-gray-500'}`}>
+                          <td
+                            className={`px-6 py-4 whitespace-nowrap ${
+                              expiringSoon
+                                ? 'font-semibold text-red-600'
+                                : 'text-gray-500'
+                            }`}
+                          >
                             <span className="text-sm">
                               {new Date(drug.exp_date).toLocaleDateString()}
                             </span>
@@ -833,7 +947,10 @@ const DrugsTable = () => {
                               />
                             ) : (
                               <span className="text-sm text-gray-500 font-medium">
-                                ₹{typeof drug.price === 'number' ? drug.price.toFixed(2) : parseFloat(drug.price).toFixed(2)}
+                                ₹
+                                {typeof drug.price === 'number'
+                                  ? drug.price.toFixed(2)
+                                  : parseFloat(drug.price).toFixed(2)}
                               </span>
                             )}
                           </td>
@@ -849,7 +966,13 @@ const DrugsTable = () => {
                                 required
                               />
                             ) : (
-                              <span className={`px-2 py-1 rounded-full text-xs ${drug.stock > 10 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs ${
+                                  drug.stock > 10
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-yellow-100 text-yellow-800'
+                                }`}
+                              >
                                 {drug.stock} in stock
                               </span>
                             )}
@@ -868,12 +991,17 @@ const DrugsTable = () => {
                                 <option value="OUTREACH">OUTREACH</option>
                               </select>
                             ) : (
-                              <span className={`px-2 py-1 rounded-full text-xs ${
-                                drug.category === 'IPD' ? 'bg-blue-100 text-blue-800' :
-                                drug.category === 'OPD' ? 'bg-purple-100 text-purple-800' :
-                                drug.category === 'OUTREACH' ? 'bg-orange-100 text-orange-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs ${
+                                  drug.category === 'IPD'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : drug.category === 'OPD'
+                                    ? 'bg-purple-100 text-purple-800'
+                                    : drug.category === 'OUTREACH'
+                                    ? 'bg-orange-100 text-orange-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}
+                              >
                                 {drug.category || 'N/A'}
                               </span>
                             )}
@@ -882,14 +1010,14 @@ const DrugsTable = () => {
                             <div className="flex space-x-2">
                               {isEditing ? (
                                 <>
-                                  <button 
+                                  <button
                                     onClick={() => handleUpdate(drug.id)}
                                     className="text-green-600 hover:text-green-800 transition-colors"
                                     title="Save"
                                   >
                                     <FiSave className="h-5 w-5" />
                                   </button>
-                                  <button 
+                                  <button
                                     onClick={handleCancelEdit}
                                     className="text-red-600 hover:text-red-800 transition-colors"
                                     title="Cancel"
@@ -899,14 +1027,14 @@ const DrugsTable = () => {
                                 </>
                               ) : (
                                 <>
-                                  <button 
+                                  <button
                                     onClick={() => handleEdit(drug)}
                                     className="text-blue-600 hover:text-blue-800 transition-colors"
                                     title="Edit"
                                   >
                                     <FiEdit2 className="h-5 w-5" />
                                   </button>
-                                  <button 
+                                  <button
                                     onClick={() => handleDelete(drug.id)}
                                     className="text-red-600 hover:text-red-800 transition-colors"
                                     title="Delete"
@@ -922,7 +1050,10 @@ const DrugsTable = () => {
                     })
                   ) : (
                     <tr>
-                      <td colSpan="10" className="px-6 py-4 text-center text-sm text-gray-500">
+                      <td
+                        colSpan="10"
+                        className="px-6 py-4 text-center text-sm text-gray-500"
+                      >
                         No drugs found matching your criteria
                       </td>
                     </tr>
