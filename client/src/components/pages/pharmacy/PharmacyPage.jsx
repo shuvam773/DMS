@@ -176,31 +176,28 @@ const PharmacyPage = () => {
       <div className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${!isMobile ? (sidebarCollapsed ? 'ml-20' : 'ml-64') : ''}`}>
         {/* Header */}
         <header className="bg-white shadow-sm px-4 md:px-6 py-4 flex justify-between items-center">
-          {/* Mobile Menu Button */}
-          {isMobile && (
-            <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700 p-1">
-              <FiMenu className="text-2xl" />
-            </button>
-          )}
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <button className="text-gray-500 hover:text-gray-700">
-                <FiPackage className="text-xl" />
-              </button>
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                3
-              </span>
-            </div>
-            <button
-              onClick={handleProfileClick}
-              className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center hover:bg-indigo-200 transition-colors"
-            >
-              <span className="text-indigo-800 font-medium">
-                {user?.name?.charAt(0)}
-              </span>
-            </button>
-          </div>
-        </header>
+                  {/* Mobile Menu Button */}
+                  {isMobile && (
+                    <button
+                      onClick={toggleSidebar}
+                      className="text-gray-500 hover:text-gray-700 p-1"
+                    >
+                      <FiMenu className="text-2xl" />
+                    </button>
+                  )}
+                  
+                  <div className="flex items-center space-x-4 ml-auto">
+                    
+                    <button
+                      onClick={handleProfileClick}
+                      className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center hover:bg-indigo-200 transition-colors"
+                    >
+                      <span className="text-indigo-800 font-medium">
+                        {user?.name?.charAt(0)}
+                      </span>
+                    </button>
+                  </div>
+                </header>
 
         {/* Content Area */}
         <main className="p-4 md:p-6">

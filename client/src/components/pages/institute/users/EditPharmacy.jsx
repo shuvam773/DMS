@@ -74,7 +74,7 @@ const EditPharmacy = ({ isOpen, onClose, onSave, pharmacy }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
+    <div className="fixed pb-12 inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 border-b sticky top-0 bg-white z-10 rounded-t-lg">

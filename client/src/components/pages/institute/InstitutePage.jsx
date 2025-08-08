@@ -33,7 +33,6 @@ const InstitutePage = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileDetails, setProfileDetails] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
-  
 
   const fetchProfileDetails = async () => {
     try {
@@ -89,13 +88,21 @@ const InstitutePage = () => {
     <div className="flex h-screen bg-gray-50 relative">
       {/* Mobile Sidebar Overlay */}
       {isMobile && mobileSidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-20" onClick={closeMobileSidebar} />
+        <div
+          className="fixed inset-0 bg-black/50 z-20"
+          onClick={closeMobileSidebar}
+        />
       )}
       {/* Sidebar */}
       <div
         className={`bg-indigo-800 text-white transition-all duration-300 ease-in-out 
         ${sidebarCollapsed ? 'w-20' : 'w-64'} 
-        ${isMobile ? 'fixed inset-y-0 left-0 z-30 transform ' + (mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'fixed'}
+        ${
+          isMobile
+            ? 'fixed inset-y-0 left-0 z-30 transform ' +
+              (mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full')
+            : 'fixed'
+        }
         flex flex-col h-full`}
       >
         {/* Collapse Button */}
@@ -143,13 +150,43 @@ const InstitutePage = () => {
         <nav className="flex-1 px-2 overflow-y-auto">
           <ul className="space-y-1">
             {[
-              { id: 'dashboard', icon: <FiHome />, label: 'Dashboard', to: 'dashboard' },
-              { id: 'dispensaries', icon: <FiShoppingBag />, label: 'Dispensaries', to: 'dispensaries' },
+              {
+                id: 'dashboard',
+                icon: <FiHome />,
+                label: 'Dashboard',
+                to: 'dashboard',
+              },
+              {
+                id: 'dispensaries',
+                icon: <FiShoppingBag />,
+                label: 'Dispensaries',
+                to: 'dispensaries',
+              },
               { id: 'drugs', icon: <FaPills />, label: 'Drugs', to: 'drugs' },
-              { id: 'orders', icon: <FiPackage />, label: 'Orders', to: 'orders' },
-              { id: 'order-history', icon: <FaHistory />, label: 'Order History', to: 'order-history' },
-              { id: 'indent', icon: <FiTruck />, label: 'Indent', to: 'indent' },
-              { id: 'settings', icon: <FiSettings />, label: 'Settings', to: 'settings' },
+              {
+                id: 'orders',
+                icon: <FiPackage />,
+                label: 'Orders',
+                to: 'orders',
+              },
+              {
+                id: 'order-history',
+                icon: <FaHistory />,
+                label: 'Order History',
+                to: 'order-history',
+              },
+              {
+                id: 'indent',
+                icon: <FiTruck />,
+                label: 'Indent',
+                to: 'indent',
+              },
+              {
+                id: 'settings',
+                icon: <FiSettings />,
+                label: 'Settings',
+                to: 'settings',
+              },
             ].map((item) => (
               <li key={item.id}>
                 <NavLink
@@ -204,15 +241,9 @@ const InstitutePage = () => {
               <FiMenu className="text-2xl" />
             </button>
           )}
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <button className="text-gray-500 hover:text-gray-700">
-                <FiPackage className="text-xl" />
-              </button>
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                3
-              </span>
-            </div>
+
+          <div className="flex items-center space-x-4 ml-auto">
+            
             <button
               onClick={handleProfileClick}
               className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center hover:bg-indigo-200 transition-colors"

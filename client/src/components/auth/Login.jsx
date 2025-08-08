@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import UserContext from '../../context/UserContext';
 import backgroundImage from '../../assets/logo.jpeg';
@@ -6,9 +6,28 @@ import api from '../../api/api';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { loginInfo, setLoginInfo, login } = useContext(UserContext);
+  const { loginInfo, setLoginInfo, login, user, loading } = useContext(UserContext);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if user is already authenticated
+  useEffect(() => {
+    if (!loading && user?.isAuthenticated) {
+      switch (user.role.toLowerCase()) {
+        case 'admin':
+          navigate('/admin/dashboard');
+          break;
+        case 'institute':
+          navigate('/institute/dashboard');
+          break;
+        case 'pharmacy':
+          navigate('/pharmacy/dashboard');
+          break;
+        default:
+          navigate('/unauthorized');
+      }
+    }
+  }, [user, loading, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,13 +82,13 @@ const Login = () => {
         // Navigate according to role
         switch (response.data.role.toLowerCase()) {
           case 'admin':
-            navigate('/admin');
+            navigate('/admin/dashboard');
             break;
           case 'institute':
-            navigate('/institute');
+            navigate('/institute/dashboard');
             break;
           case 'pharmacy':
-            navigate('/pharmacy');
+            navigate('/pharmacy/dashboard');
             break;
           default:
             console.log('Unknown role:', response.data.role);
@@ -84,6 +103,23 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+  // Show loading if authentication state is being checked
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render login form if user is already authenticated
+  if (user?.isAuthenticated) {
+    return null;
+  }
 
   return (
     <>

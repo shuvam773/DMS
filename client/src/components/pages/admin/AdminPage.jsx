@@ -210,14 +210,7 @@ const AdminPage = () => {
           )}
           
           <div className="flex items-center space-x-4 ml-auto">
-            <div className="relative">
-              <button className="text-gray-500 hover:text-gray-700">
-                <FiPackage className="text-xl" />
-              </button>
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                3
-              </span>
-            </div>
+            
             <button
               onClick={handleProfileClick}
               className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center hover:bg-indigo-200 transition-colors"

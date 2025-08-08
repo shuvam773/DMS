@@ -24,7 +24,7 @@ const UserContextProvider = ({ children }) => {
           email: localStorage.getItem('userEmail') || decoded.email || '',
           id: localStorage.getItem('userId') || decoded.userId || '',
           created_by:
-            localStorage.getItem('userCreatedBy') || decoded.createdBy || null, // Fixed this line
+            localStorage.getItem('userCreatedBy') || decoded.createdBy || null,
           isAuthenticated: true,
           jwtToken: token,
         };
@@ -43,14 +43,14 @@ const UserContextProvider = ({ children }) => {
     localStorage.setItem('userRole', userData.role.toLowerCase());
     localStorage.setItem('userEmail', userData.email);
     localStorage.setItem('userId', userData.id);
-    localStorage.setItem('userCreatedBy', userData.created_by); // Add this line
+    localStorage.setItem('userCreatedBy', userData.created_by);
 
     setUser({
       name: userData.name,
       role: userData.role.toLowerCase(),
       email: userData.email,
       id: userData.id,
-      created_by: userData.created_by, // Add this line
+      created_by: userData.created_by,
       isAuthenticated: true,
       jwtToken: userData.jwtToken,
     });
@@ -61,6 +61,8 @@ const UserContextProvider = ({ children }) => {
     localStorage.removeItem('loggedInUser');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userCreatedBy');
     setUser(null);
     window.location.href = '/login';
   };

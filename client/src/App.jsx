@@ -6,19 +6,20 @@ import Register from './components/auth/Register';
 import Dashboard from './components/pages/Dashboard';
 import UnauthorizedPage from './components/pages/UnauthorizedPage';
 import ProtectedRoute from './context/ProtectedRoute';
+import AuthRedirect from './context/AuthRedirect';
 import AdminPage from './components/pages/admin/AdminPage'
 import InstitutePage from './components/pages/institute/InstitutePage';
 import PharmacyPage from './components/pages/pharmacy/PharmacyPage';
 import { ToastContainer } from 'react-toastify';
 import Chatbot from './components/chatbot/Chatbot';
-import DrugManagement from './components/pages/admin/drugs/DrugManagement';
 const App = () => {
   return (
     <BrowserRouter>
       <UserContextProvider>
+        <AuthRedirect />
         <Routes>
           
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<Navigate to="/login" replace/>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard/>}/>
