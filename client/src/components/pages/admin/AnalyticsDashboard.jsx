@@ -48,6 +48,7 @@ const AnalyticsDashboard = () => {
     orderStatuses: null,
     revenueTrends: null,
     categoryDistribution: null,
+    instituteRevenue: null, // New field for institute revenue
     loading: true,
   });
 
@@ -80,6 +81,7 @@ const AnalyticsDashboard = () => {
           orderStatuses: chartsResponse.data.charts.orderStatuses,
           revenueTrends: chartsResponse.data.charts.revenueTrends,
           categoryDistribution: chartsResponse.data.charts.categoryDistribution,
+          instituteRevenue: chartsResponse.data.charts.instituteRevenue, // New field
           loading: false,
         });
 
@@ -248,6 +250,33 @@ const AnalyticsDashboard = () => {
         borderColor: '#3B82F6',
         tension: 0.1,
         borderWidth: 2,
+      },
+    ],
+  };
+
+  // New institute revenue chart data
+  const instituteRevenueData = {
+    labels: chartsData.instituteRevenue?.map(item => 
+      user?.role === 'admin' ? item.institute_name : item.pharmacy_name
+    ) || [],
+    datasets: [
+      {
+        label: 'Revenue (₹)',
+        data: chartsData.instituteRevenue?.map(item => item.revenue) || [],
+        backgroundColor: [
+          '#3B82F6',
+          '#10B981',
+          '#F59E0B',
+          '#EF4444',
+          '#8B5CF6',
+          '#EC4899',
+          '#14B8A6',
+          '#F97316',
+          '#64748B',
+          '#A855F7',
+        ],
+        borderColor: '#fff',
+        borderWidth: 1,
       },
     ],
   };
@@ -589,6 +618,50 @@ const AnalyticsDashboard = () => {
           <TabPanel>
             <div className="mt-4">
               <div className="grid grid-cols-1 gap-4 mb-6">
+                {/* Institute Revenue Chart - New Chart */}
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
+                    {user?.role === 'admin' ? 'Institute-wise Revenue' : 'Pharmacy-wise Revenue'}
+                  </h3>
+                  {chartsData.loading ? (
+                    <div className="flex justify-center items-center h-72 sm:h-96">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : (
+                    <div className="h-72 sm:h-96">
+                      <Bar
+                        data={instituteRevenueData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                              ticks: {
+                                callback: function (value) {
+                                  return '₹' + value.toLocaleString();
+                                },
+                              },
+                            },
+                          },
+                          plugins: {
+                            tooltip: {
+                              callbacks: {
+                                label: function (context) {
+                                  return (
+                                    'Revenue: ₹' +
+                                    context.parsed.y.toLocaleString()
+                                  );
+                                },
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
                 {/* Revenue Trends Chart */}
                 <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
                   <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">

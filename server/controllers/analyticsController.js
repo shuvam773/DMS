@@ -113,6 +113,7 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+// In your backend API routes
 const getChartsData = async (req, res) => {
   const db = req.app.locals.db;
   const userId = req.user.id;
@@ -173,6 +174,21 @@ const getChartsData = async (req, res) => {
         ORDER BY DATE_TRUNC('month', o.created_at)
       `);
 
+      // Institute revenue (new query)
+      const instituteRevenueResult = await db.query(`
+        SELECT 
+          u.id as institute_id,
+          u.name as institute_name,
+          SUM(o.total_amount) as revenue
+        FROM orders o
+        JOIN users u ON o.recipient_id = u.id
+        WHERE u.role = 'institute'
+        AND o.created_at >= NOW() - INTERVAL '6 months'
+        GROUP BY u.id, u.name
+        ORDER BY revenue DESC
+        LIMIT 10
+      `);
+
       // Category distribution (OPD/IPD/OUTREACH)
       const categoryDistributionResult = await db.query(`
         SELECT 
@@ -181,21 +197,6 @@ const getChartsData = async (req, res) => {
           SUM(CASE WHEN category = 'OUTREACH' THEN 1 ELSE 0 END) as outreach,
           SUM(CASE WHEN category IS NULL THEN 1 ELSE 0 END) as uncategorized
         FROM drugs
-      `);
-
-      // Top drugs by category
-      const topDrugsByCategoryResult = await db.query(`
-        SELECT 
-          d.category,
-          d.name,
-          d.stock,
-          COUNT(oi.id) as order_count
-        FROM drugs d
-        LEFT JOIN order_items oi ON d.id = oi.drug_id
-        WHERE d.category IN ('IPD', 'OPD', 'OUTREACH')
-        GROUP BY d.category, d.name, d.stock
-        ORDER BY d.category, order_count DESC
-        LIMIT 5
       `);
 
       chartsData = {
@@ -207,8 +208,12 @@ const getChartsData = async (req, res) => {
           months: revenueTrendsResult.rows.map(row => row.month),
           revenue: revenueTrendsResult.rows.map(row => parseFloat(row.revenue || 0)),
         },
+        instituteRevenue: instituteRevenueResult.rows.map(row => ({
+          institute_id: row.institute_id,
+          institute_name: row.institute_name,
+          revenue: parseFloat(row.revenue || 0)
+        })),
         categoryDistribution: categoryDistributionResult.rows[0],
-        topDrugsByCategory: topDrugsByCategoryResult.rows,
       };
     } else if (userRole === 'institute') {
       // Institute can see data related to their pharmacies and drugs
@@ -259,6 +264,22 @@ const getChartsData = async (req, res) => {
         ORDER BY DATE_TRUNC('month', o.created_at)
       `, [userId]);
 
+      // Pharmacy revenue (new query)
+      const pharmacyRevenueResult = await db.query(`
+        SELECT 
+          u.id as pharmacy_id,
+          u.name as pharmacy_name,
+          SUM(o.total_amount) as revenue
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        WHERE u.role = 'pharmacy'
+        AND u.created_by = $1
+        AND o.created_at >= NOW() - INTERVAL '6 months'
+        GROUP BY u.id, u.name
+        ORDER BY revenue DESC
+        LIMIT 10
+      `, [userId]);
+
       // Category distribution (OPD/IPD/OUTREACH)
       const categoryDistributionResult = await db.query(`
         SELECT 
@@ -270,22 +291,6 @@ const getChartsData = async (req, res) => {
         WHERE created_by = $1
       `, [userId]);
 
-      // Top drugs by category
-      const topDrugsByCategoryResult = await db.query(`
-        SELECT 
-          d.category,
-          d.name,
-          d.stock,
-          COUNT(oi.id) as order_count
-        FROM drugs d
-        LEFT JOIN order_items oi ON d.id = oi.drug_id
-        WHERE d.category IN ('IPD', 'OPD', 'OUTREACH')
-        AND d.created_by = $1
-        GROUP BY d.category, d.name, d.stock
-        ORDER BY d.category, order_count DESC
-        LIMIT 5
-      `, [userId]);
-
       chartsData = {
         drugTypes: drugTypesResult.rows,
         stockLevels: stockLevelsResult.rows[0],
@@ -294,8 +299,12 @@ const getChartsData = async (req, res) => {
           months: revenueTrendsResult.rows.map(row => row.month),
           revenue: revenueTrendsResult.rows.map(row => parseFloat(row.revenue || 0)),
         },
+        instituteRevenue: pharmacyRevenueResult.rows.map(row => ({
+          pharmacy_id: row.pharmacy_id,
+          pharmacy_name: row.pharmacy_name,
+          revenue: parseFloat(row.revenue || 0)
+        })),
         categoryDistribution: categoryDistributionResult.rows[0],
-        topDrugsByCategory: topDrugsByCategoryResult.rows,
       };
     } else if (userRole === 'pharmacy') {
       // Pharmacy can only see their own drugs data
