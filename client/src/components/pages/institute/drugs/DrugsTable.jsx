@@ -44,6 +44,14 @@ const DrugsTable = () => {
     category: '',
   });
 
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  });
+
   // State for drug types and names from database
   const [drugTypes, setDrugTypes] = useState([]);
   const [availableDrugNames, setAvailableDrugNames] = useState([]);
@@ -119,54 +127,46 @@ const DrugsTable = () => {
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (drug) =>
-          drug.name.toLowerCase().includes(term) ||
-          drug.batch_no?.toLowerCase().includes(term) ||
-          drug.description?.toLowerCase().includes(term) ||
-          drug.drug_type?.toLowerCase().includes(term) ||
-          drug.category?.toLowerCase().includes(term)
+      result = result.filter(drug => 
+        drug.name.toLowerCase().includes(term) ||
+        drug.batch_no?.toLowerCase().includes(term) ||
+        drug.description?.toLowerCase().includes(term) ||
+        drug.drug_type?.toLowerCase().includes(term) ||
+        drug.category?.toLowerCase().includes(term)
       );
     }
 
     if (filters.expiringSoon) {
-      result = result.filter((drug) => isExpiringSoon(drug.exp_date));
+      result = result.filter(drug => isExpiringSoon(drug.exp_date));
     }
 
     if (filters.lowStock) {
-      result = result.filter((drug) => drug.stock <= 10);
+      result = result.filter(drug => drug.stock <= 10);
     }
 
     if (filters.priceRange[0] || filters.priceRange[1]) {
-      const minPrice = filters.priceRange[0]
-        ? parseFloat(filters.priceRange[0])
-        : 0;
-      const maxPrice = filters.priceRange[1]
-        ? parseFloat(filters.priceRange[1])
-        : Infinity;
-      result = result.filter(
-        (drug) => drug.price >= minPrice && drug.price <= maxPrice
+      const minPrice = filters.priceRange[0] ? parseFloat(filters.priceRange[0]) : 0;
+      const maxPrice = filters.priceRange[1] ? parseFloat(filters.priceRange[1]) : Infinity;
+      result = result.filter(drug => 
+        drug.price >= minPrice && 
+        drug.price <= maxPrice
       );
     }
 
     if (filters.category) {
-      result = result.filter((drug) => drug.category === filters.category);
+      result = result.filter(drug => drug.category === filters.category);
     }
 
     if (filters.drugType) {
-      result = result.filter((drug) => drug.drug_type === filters.drugType);
+      result = result.filter(drug => drug.drug_type === filters.drugType);
     }
 
     if (filters.expDateRange[0] || filters.expDateRange[1]) {
-      result = result.filter((drug) => {
+      result = result.filter(drug => {
         if (!drug.exp_date) return false;
         const expDate = new Date(drug.exp_date);
-        const startDate = filters.expDateRange[0]
-          ? new Date(filters.expDateRange[0])
-          : null;
-        const endDate = filters.expDateRange[1]
-          ? new Date(filters.expDateRange[1])
-          : null;
+        const startDate = filters.expDateRange[0] ? new Date(filters.expDateRange[0]) : null;
+        const endDate = filters.expDateRange[1] ? new Date(filters.expDateRange[1]) : null;
 
         if (startDate && expDate < startDate) return false;
         if (endDate && expDate > endDate) return false;
@@ -174,7 +174,28 @@ const DrugsTable = () => {
       });
     }
 
+    // Update pagination
+    const total = result.length;
+    const totalPages = Math.ceil(total / pagination.limit);
+    setPagination(prev => ({
+      ...prev,
+      total,
+      totalPages,
+      page: prev.page > totalPages ? 1 : prev.page
+    }));
+
     setFilteredDrugs(result);
+  };
+
+  // Get paginated drugs
+  const getPaginatedDrugs = () => {
+    const startIndex = (pagination.page - 1) * pagination.limit;
+    const endIndex = startIndex + pagination.limit;
+    return filteredDrugs.slice(startIndex, endIndex);
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const handleFilterChange = (e) => {
@@ -775,8 +796,8 @@ const DrugsTable = () => {
                     </tr>
                   )}
 
-                  {filteredDrugs.length > 0 ? (
-                    filteredDrugs.map((drug) => {
+                  {getPaginatedDrugs().length > 0 ? (
+                    getPaginatedDrugs().map((drug) => {
                       const expiringSoon = isExpiringSoon(drug.exp_date);
                       const isEditing = editingId === drug.id;
 
@@ -1032,6 +1053,28 @@ const DrugsTable = () => {
                 </tbody>
               </table>
             </div>
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="flex justify-center items-center py-4">
+                <button
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <span className="mx-2 text-gray-700">
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <button
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page === pagination.totalPages}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

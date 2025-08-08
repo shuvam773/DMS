@@ -37,6 +37,14 @@ const DrugsTable = () => {
     category: '',
   });
 
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  });
+
   // State for drug types and names from database
   const [drugTypes, setDrugTypes] = useState([]);
   const [availableDrugNames, setAvailableDrugNames] = useState([]);
@@ -159,7 +167,28 @@ const DrugsTable = () => {
       });
     }
 
+    // Update pagination
+    const total = result.length;
+    const totalPages = Math.ceil(total / pagination.limit);
+    setPagination(prev => ({
+      ...prev,
+      total,
+      totalPages,
+      page: prev.page > totalPages ? 1 : prev.page
+    }));
+
     setFilteredDrugs(result);
+  };
+
+  // Get paginated drugs
+  const getPaginatedDrugs = () => {
+    const startIndex = (pagination.page - 1) * pagination.limit;
+    const endIndex = startIndex + pagination.limit;
+    return filteredDrugs.slice(startIndex, endIndex);
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const handleFilterChange = (e) => {
@@ -696,8 +725,8 @@ const DrugsTable = () => {
                     </tr>
                   )}
 
-                  {filteredDrugs.length > 0 ? (
-                    filteredDrugs.map((drug) => {
+                  {getPaginatedDrugs().length > 0 ? (
+                    getPaginatedDrugs().map((drug) => {
                       const expiringSoon = isExpiringSoon(drug.exp_date);
                       const isEditing = editingId === drug.id;
                       
@@ -901,6 +930,28 @@ const DrugsTable = () => {
                 </tbody>
               </table>
             </div>
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="flex justify-center items-center py-4">
+                <button
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <span className="mx-2 text-gray-700">
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <button
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page === pagination.totalPages}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

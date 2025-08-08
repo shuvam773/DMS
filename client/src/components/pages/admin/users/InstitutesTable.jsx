@@ -296,50 +296,62 @@ const InstituteTable = () => {
 
                 {/* Pagination */}
                 {pagination.totalPages > 1 && (
-                  <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm text-gray-700">
-                          Showing{' '}
-                          <span className="font-medium">
-                            {(pagination.page - 1) * pagination.limit + 1}
-                          </span>{' '}
-                          to{' '}
-                          <span className="font-medium">
-                            {Math.min(
-                              pagination.page * pagination.limit,
-                              pagination.total
-                            )}
-                          </span>{' '}
-                          of{' '}
-                          <span className="font-medium">
-                            {pagination.total}
-                          </span>{' '}
-                          results
-                        </p>
-                      </div>
-                      <div>
-                        <nav
-                          className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                          aria-label="Pagination"
+                  <div className="px-4 py-3 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 sm:px-6 gap-4">
+                    {/* Mobile pagination info */}
+                    <div className="flex sm:hidden items-center justify-center w-full">
+                      <p className="text-sm text-gray-700">
+                        Page {pagination.page} of {pagination.totalPages}
+                      </p>
+                    </div>
+                    
+                    {/* Desktop pagination info */}
+                    <div className="hidden sm:block">
+                      <p className="text-sm text-gray-700">
+                        Showing{' '}
+                        <span className="font-medium">
+                          {(pagination.page - 1) * pagination.limit + 1}
+                        </span>{' '}
+                        to{' '}
+                        <span className="font-medium">
+                          {Math.min(
+                            pagination.page * pagination.limit,
+                            pagination.total
+                          )}
+                        </span>{' '}
+                        of{' '}
+                        <span className="font-medium">
+                          {pagination.total}
+                        </span>{' '}
+                        results
+                      </p>
+                    </div>
+                    
+                    {/* Pagination controls */}
+                    <div className="flex items-center justify-center sm:justify-end w-full sm:w-auto">
+                      <nav
+                        className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                        aria-label="Pagination"
+                      >
+                        <button
+                          onClick={() =>
+                            handlePageChange(pagination.page - 1)
+                          }
+                          disabled={pagination.page <= 1}
+                          className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                            pagination.page <= 1
+                              ? 'text-gray-300 cursor-not-allowed'
+                              : 'text-gray-500 hover:bg-gray-50'
+                          }`}
                         >
-                          <button
-                            onClick={() =>
-                              handlePageChange(pagination.page - 1)
-                            }
-                            disabled={pagination.page <= 1}
-                            className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                              pagination.page <= 1
-                                ? 'text-gray-300 cursor-not-allowed'
-                                : 'text-gray-500 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span className="sr-only">Previous</span>
-                            <FiChevronLeft
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </button>
+                          <span className="sr-only">Previous</span>
+                          <FiChevronLeft
+                            className="h-5 w-5"
+                            aria-hidden="true"
+                          />
+                        </button>
+                        
+                        {/* Show limited page numbers on mobile */}
+                        <div className="hidden sm:flex">
                           {Array.from(
                             { length: pagination.totalPages },
                             (_, i) => i + 1
@@ -356,25 +368,31 @@ const InstituteTable = () => {
                               {pageNum}
                             </button>
                           ))}
-                          <button
-                            onClick={() =>
-                              handlePageChange(pagination.page + 1)
-                            }
-                            disabled={pagination.page >= pagination.totalPages}
-                            className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                              pagination.page >= pagination.totalPages
-                                ? 'text-gray-300 cursor-not-allowed'
-                                : 'text-gray-500 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span className="sr-only">Next</span>
-                            <FiChevronRight
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </button>
-                        </nav>
-                      </div>
+                        </div>
+                        
+                        {/* Mobile page indicator */}
+                        <div className="flex sm:hidden items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                          {pagination.page}
+                        </div>
+                        
+                        <button
+                          onClick={() =>
+                            handlePageChange(pagination.page + 1)
+                          }
+                          disabled={pagination.page >= pagination.totalPages}
+                          className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                            pagination.page >= pagination.totalPages
+                              ? 'text-gray-300 cursor-not-allowed'
+                              : 'text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          <span className="sr-only">Next</span>
+                          <FiChevronRight
+                            className="h-5 w-5"
+                            aria-hidden="true"
+                          />
+                        </button>
+                      </nav>
                     </div>
                   </div>
                 )}
