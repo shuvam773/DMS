@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   FiHome,
   FiPackage,
@@ -6,8 +6,10 @@ import {
   FiLogOut,
   FiChevronLeft,
   FiLoader,
+  FiMenu,
+  FiX
 } from 'react-icons/fi';
-import { FaRegHospital, FaPills, FaPlusCircle} from 'react-icons/fa';
+import { FaRegHospital, FaPills, FaPlusCircle } from 'react-icons/fa';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import InstitutesTable from './users/InstitutesTable';
 import DrugsTable from './drugs/DrugsTable';
@@ -18,8 +20,9 @@ import { MdBorderColor } from 'react-icons/md';
 import ProfileModal from '../ProfileModal';
 import AdminOrderHistory from './orders/AdminOrderHistory';
 import api from '../../../api/api';
-import { NavLink, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { NavLink, Routes, Route, Navigate } from 'react-router-dom';
 import DrugManagement from './drugs/DrugManagement';
+import { useMediaQuery } from 'react-responsive';
 
 const AdminPage = () => {
   const { user, logout } = useContext(UserContext);
@@ -27,11 +30,21 @@ const AdminPage = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileDetails, setProfileDetails] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+
+  useEffect(() => {
+    // Collapse sidebar by default on mobile
+    if (isMobile) {
+      setSidebarCollapsed(true);
+    }
+  }, [isMobile]);
 
   const fetchProfileDetails = async () => {
     try {
       setLoadingProfile(true);
-      const response = await api.get('/auth/info'); // Use api instance
+      const response = await api.get('/auth/info');
       
       if (response.data.status && response.data.user) {
         setProfileDetails(response.data.user);
@@ -57,24 +70,51 @@ const AdminPage = () => {
     window.location.href = '/';
   };
 
+  const toggleSidebar = () => {
+    if (isMobile) {
+      setMobileSidebarOpen(!mobileSidebarOpen);
+    } else {
+      setSidebarCollapsed(!sidebarCollapsed);
+    }
+  };
+
+  const closeMobileSidebar = () => {
+    if (isMobile) {
+      setMobileSidebarOpen(false);
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 relative">
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && mobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-20"
+          onClick={closeMobileSidebar}
+        />
+      )}
+
       {/* Sidebar */}
       <div
         className={`bg-indigo-800 text-white transition-all duration-300 ease-in-out 
-        ${sidebarCollapsed ? 'w-20' : 'w-64'} flex flex-col relative`}
+        ${sidebarCollapsed ? 'w-20' : 'w-64'} 
+        ${isMobile ? 'fixed inset-y-0 left-0 z-30 transform ' + 
+          (mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'fixed'} 
+        flex flex-col h-full`}
       >
-        {/* Collapse Button */}
-        <button
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute -right-3 top-6 bg-white text-indigo-800 rounded-full p-1 shadow-md hover:bg-gray-100"
-        >
-          <FiChevronLeft
-            className={`transition-transform ${
-              sidebarCollapsed ? 'rotate-180' : ''
-            }`}
-          />
-        </button>
+        {/* Collapse Button (desktop only) */}
+        {!isMobile && (
+          <button
+            onClick={toggleSidebar}
+            className="absolute -right-3 top-6 bg-white text-indigo-800 rounded-full p-1 shadow-md hover:bg-gray-100"
+          >
+            <FiChevronLeft
+              className={`transition-transform ${
+                sidebarCollapsed ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+        )}
 
         {/* Logo and User Profile */}
         <div className="flex flex-col items-center pt-6 pb-4 border-b border-indigo-700">
@@ -106,7 +146,7 @@ const AdminPage = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-2">
+        <nav className="flex-1 px-2 overflow-y-auto">
           <ul className="space-y-1">
             {[
               { id: 'dashboard', icon: <FiHome />, label: 'Dashboard', to: 'dashboard' },
@@ -126,6 +166,7 @@ const AdminPage = () => {
                         : 'text-indigo-200 hover:bg-indigo-700/50'
                     } ${sidebarCollapsed ? 'justify-center' : ''}`
                   }
+                  onClick={closeMobileSidebar}
                   end
                 >
                   <span className="text-lg">{item.icon}</span>
@@ -152,10 +193,23 @@ const AdminPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div 
+        className={`flex-1 overflow-auto transition-all duration-300 ease-in-out
+          ${!isMobile ? (sidebarCollapsed ? 'ml-20' : 'ml-64') : ''}`}
+      >
         {/* Header */}
-        <header className="bg-white shadow-sm px-6 py-4 flex justify-end items-center">
-          <div className="flex items-center space-x-4">
+        <header className="bg-white shadow-sm px-4 md:px-6 py-4 flex justify-between items-center">
+          {/* Mobile Menu Button */}
+          {isMobile && (
+            <button
+              onClick={toggleSidebar}
+              className="text-gray-500 hover:text-gray-700 p-1"
+            >
+              <FiMenu className="text-2xl" />
+            </button>
+          )}
+          
+          <div className="flex items-center space-x-4 ml-auto">
             <div className="relative">
               <button className="text-gray-500 hover:text-gray-700">
                 <FiPackage className="text-xl" />
@@ -176,8 +230,8 @@ const AdminPage = () => {
         </header>
 
         {/* Content Area */}
-        <main className="p-6">
-          <div className="bg-white rounded-xl shadow-sm p-6">
+        <main className="p-4 md:p-6">
+          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
             <Routes>
               <Route path="" element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AnalyticsDashboard />} />

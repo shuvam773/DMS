@@ -1,10 +1,11 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   FiHome,
   FiShoppingBag,
   FiSettings,
   FiLogOut,
   FiChevronLeft,
+  FiMenu,
   FiPackage,
   FiTruck,
   FiLoader,
@@ -21,15 +22,18 @@ import SellerPage from './orders/SellerPage';
 import OrderHistory from './orders/OrderHistory';
 import ProfileModal from '../ProfileModal';
 import api from '../../../api/api';
-import { NavLink, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Routes, Route, Navigate } from 'react-router-dom';
+import { useMediaQuery } from 'react-responsive';
 
 const InstitutePage = () => {
   const { user, logout } = useContext(UserContext);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileDetails, setProfileDetails] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
-  const location = useLocation();
+  
 
   const fetchProfileDetails = async () => {
     try {
@@ -61,17 +65,43 @@ const InstitutePage = () => {
     window.location.href = '/login';
   };
 
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarCollapsed(true);
+    }
+  }, [isMobile]);
+
+  const toggleSidebar = () => {
+    if (isMobile) {
+      setMobileSidebarOpen((prev) => !prev);
+    } else {
+      setSidebarCollapsed((prev) => !prev);
+    }
+  };
+
+  const closeMobileSidebar = () => {
+    if (isMobile) {
+      setMobileSidebarOpen(false);
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 relative">
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && mobileSidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-20" onClick={closeMobileSidebar} />
+      )}
       {/* Sidebar */}
       <div
         className={`bg-indigo-800 text-white transition-all duration-300 ease-in-out 
-        ${sidebarCollapsed ? 'w-20' : 'w-64'} flex flex-col relative`}
+        ${sidebarCollapsed ? 'w-20' : 'w-64'} 
+        ${isMobile ? 'fixed inset-y-0 left-0 z-30 transform ' + (mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'fixed'}
+        flex flex-col h-full`}
       >
         {/* Collapse Button */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute -right-3 top-6 bg-white text-indigo-800 rounded-full p-1 shadow-md hover:bg-gray-100"
+          className="absolute -right-3 top-6 bg-white text-indigo-800 rounded-full p-1 shadow-md hover:bg-gray-100 hidden sm:block"
         >
           <FiChevronLeft
             className={`transition-transform ${
@@ -110,7 +140,7 @@ const InstitutePage = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-2">
+        <nav className="flex-1 px-2 overflow-y-auto">
           <ul className="space-y-1">
             {[
               { id: 'dashboard', icon: <FiHome />, label: 'Dashboard', to: 'dashboard' },
@@ -131,6 +161,7 @@ const InstitutePage = () => {
                         : 'text-indigo-200 hover:bg-indigo-700/50'
                     } ${sidebarCollapsed ? 'justify-center' : ''}`
                   }
+                  onClick={closeMobileSidebar}
                   end
                 >
                   <span className="text-lg">{item.icon}</span>
@@ -157,9 +188,22 @@ const InstitutePage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div
+        className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${
+          !isMobile ? (sidebarCollapsed ? 'ml-20' : 'ml-64') : ''
+        }`}
+      >
         {/* Header */}
-        <header className="bg-white shadow-sm px-6 py-4 flex justify-end items-center">
+        <header className="bg-white shadow-sm px-4 md:px-6 py-4 flex justify-between items-center">
+          {/* Mobile Menu Button */}
+          {isMobile && (
+            <button
+              onClick={toggleSidebar}
+              className="text-gray-500 hover:text-gray-700 p-1"
+            >
+              <FiMenu className="text-2xl" />
+            </button>
+          )}
           <div className="flex items-center space-x-4">
             <div className="relative">
               <button className="text-gray-500 hover:text-gray-700">
@@ -181,8 +225,8 @@ const InstitutePage = () => {
         </header>
 
         {/* Content Area */}
-        <main className="p-6">
-          <div className="bg-white rounded-xl shadow-sm p-6">
+        <main className="p-4 md:p-6">
+          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
             <Routes>
               <Route path="" element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AnalyticsDashboard />} />

@@ -27,45 +27,55 @@ const OrderDetailsModal = ({ order, onClose }) => {
 
   const downloadInvoice = () => {
     const doc = new jsPDF();
-    
+
     // Add logo or title
     doc.setFontSize(20);
     doc.text('Pharmacy Invoice', 105, 20, { align: 'center' });
-    
+
     // Order information
     doc.setFontSize(12);
     doc.text(`Order #: ${order.order_no}`, 14, 30);
     doc.text(`Date: ${new Date(order.created_at).toLocaleString()}`, 14, 38);
     doc.text(`Status: ${order.overall_status}`, 14, 46);
     doc.text(`Total Amount: ₹${formatCurrency(order.total_amount)}`, 14, 54);
-    
+
     // Parties information
     doc.text(`From: ${order.sender_name}`, 14, 70);
     doc.text(`To: ${order.recipient_name} `, 14, 78);
-    
+
     // Items table
-    const tableColumn = ["Drug", "Batch #", "Qty", "Unit Price", "Total", "Status"];
+    const tableColumn = [
+      'Drug',
+      'Batch #',
+      'Qty',
+      'Unit Price',
+      'Total',
+      'Status',
+    ];
     const tableRows = [];
-    
-    order.items?.forEach(item => {
+
+    order.items?.forEach((item) => {
       const itemData = [
         item.drug_name,
         item.batch_no || 'N/A',
         item.quantity,
         `₹${formatCurrency(item.unit_price)}`,
         `₹${formatCurrency(item.total_price)}`,
-        item.status
+        item.status,
       ];
       tableRows.push(itemData);
     });
-    
+
     // Add total row
     tableRows.push([
-      '', '', '', 'Total:', 
-      `₹${formatCurrency(order.total_amount)}`, 
-      ''
+      '',
+      '',
+      '',
+      'Total:',
+      `₹${formatCurrency(order.total_amount)}`,
+      '',
     ]);
-    
+
     doc.autoTable({
       head: [tableColumn],
       body: tableRows,
@@ -73,15 +83,15 @@ const OrderDetailsModal = ({ order, onClose }) => {
       styles: {
         fontSize: 10,
         cellPadding: 2,
-        valign: 'middle'
+        valign: 'middle',
       },
       headStyles: {
         fillColor: [41, 128, 185],
         textColor: 255,
-        fontStyle: 'bold'
+        fontStyle: 'bold',
       },
       alternateRowStyles: {
-        fillColor: [245, 245, 245]
+        fillColor: [245, 245, 245],
       },
       columnStyles: {
         0: { cellWidth: 'auto' },
@@ -89,29 +99,28 @@ const OrderDetailsModal = ({ order, onClose }) => {
         2: { cellWidth: 'auto' },
         3: { cellWidth: 'auto' },
         4: { cellWidth: 'auto' },
-        5: { cellWidth: 'auto' }
-      }
+        5: { cellWidth: 'auto' },
+      },
     });
-    
+
     // Notes section if available
     if (order.notes) {
       doc.text('Notes:', 14, doc.lastAutoTable.finalY + 10);
       doc.text(order.notes, 14, doc.lastAutoTable.finalY + 18, {
-        maxWidth: 180
+        maxWidth: 180,
       });
     }
-    
+
     // Save the PDF
     doc.save(`invoice_${order.order_no}.pdf`);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center border-b p-4">
           <h2 className="text-xl font-bold text-gray-800">Order Details</h2>
           <div className="flex space-x-2">
-            
             <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
@@ -158,15 +167,11 @@ const OrderDetailsModal = ({ order, onClose }) => {
               <div className="mt-2 space-y-2">
                 <div>
                   <p className="font-medium">From:</p>
-                  <p>
-                    {order.sender_name} 
-                  </p>
+                  <p>{order.sender_name}</p>
                 </div>
                 <div>
                   <p className="font-medium">To:</p>
-                  <p>
-                    {order.recipient_name} 
-                  </p>
+                  <p>{order.recipient_name}</p>
                 </div>
               </div>
             </div>
@@ -208,7 +213,11 @@ const OrderDetailsModal = ({ order, onClose }) => {
                         {item.drug_name}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {item.batch_no || 'N/A'}
+                        {item.batch_no || (
+                          <span className="text-gray-400 italic">
+                            Not specified
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                         {item.quantity}

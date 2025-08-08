@@ -266,10 +266,10 @@ const OrderHistory = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Order History</h1>
+    <div className="container mx-auto px-4 py-6 sm:py-8">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Order History</h1>
 
-      <div className="flex border-b mb-6">
+      <div className="flex border-b mb-6 overflow-x-auto whitespace-nowrap">
         <button
           className={`py-2 px-4 font-medium ${
             activeTab === 'institute'
@@ -298,8 +298,8 @@ const OrderHistory = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="bg-white rounded-lg shadow p-3 sm:p-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
           <form onSubmit={handleSearch} className="flex-1">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -355,10 +355,10 @@ const OrderHistory = () => {
               key={order.id}
               className="bg-gray-300 rounded-lg shadow overflow-hidden"
             >
-              <div className="p-4 border-b">
-                <div className="flex justify-between items-center">
+              <div className="p-3 sm:p-4 border-b">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                   <div>
-                    <h3 className="font-semibold text-lg">
+                    <h3 className="font-semibold text-base sm:text-lg">
                       Order #{order.order_no}
                     </h3>
                     <p className="text-sm text-gray-600">
@@ -397,7 +397,7 @@ const OrderHistory = () => {
                 </div>
               </div>
 
-              <div className="p-4">
+              <div className="p-3 sm:p-4">
                 <h4 className="font-medium mb-2">
                   Items ({order.item_count}):
                 </h4>
@@ -405,7 +405,7 @@ const OrderHistory = () => {
                   {order.items.map((item, index) => (
                     <div
                       key={index}
-                      className="flex justify-between items-start p-3 bg-gray-50 rounded"
+                      className="flex flex-col sm:flex-row sm:justify-between sm:items-start p-3 bg-gray-50 rounded gap-2"
                     >
                       <div>
                         <p className="font-medium">{item.drug_name}</p>
@@ -433,7 +433,7 @@ const OrderHistory = () => {
                   ))}
                 </div>
               </div>
-              <div className="p-4 border-t">
+              <div className="p-3 sm:p-4 border-t">
                 <button
                   onClick={() => downloadInvoice(order)}
                   className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"

@@ -183,6 +183,12 @@ const AnalyticsDashboard = () => {
     ],
   };
 
+  // Dynamic height for horizontal bar chart so labels don't squash the plot area on small screens
+  const drugTypesBarHeightPx = Math.max(
+    240,
+    (drugTypesData.labels?.length || 0) * 28
+  );
+
   const stockLevelsData = {
     labels: ['Low (<10)', 'Medium (10-50)', 'High (50+)'],
     datasets: [
@@ -268,19 +274,19 @@ const AnalyticsDashboard = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+      <div className="w-full mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
               Admin Analytics Dashboard
             </h1>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               Comprehensive overview of system metrics and statistics
             </p>
           </div>
-          <div className="text-sm text-gray-500 mt-2 md:mt-0">
+          <div className="text-xs sm:text-sm text-gray-500 mt-2 md:mt-0">
             Last updated: {lastUpdated.toLocaleString()}
           </div>
         </div>
@@ -290,8 +296,8 @@ const AnalyticsDashboard = () => {
           selectedIndex={activeTab}
           onSelect={(index) => setActiveTab(index)}
         >
-          <TabList className="flex border-b border-gray-200">
-            <Tab className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
+          <TabList className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200">
+            <Tab className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
               <div
                 className={`flex items-center ${
                   activeTab === 0
@@ -299,10 +305,11 @@ const AnalyticsDashboard = () => {
                     : ''
                 }`}
               >
-                <FiPieChart className="mr-2" /> Overview
+                <FiPieChart className="mr-1 sm:mr-2" /> 
+                <span className="whitespace-nowrap">Overview</span>
               </div>
             </Tab>
-            <Tab className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
+            <Tab className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
               <div
                 className={`flex items-center ${
                   activeTab === 1
@@ -310,10 +317,11 @@ const AnalyticsDashboard = () => {
                     : ''
                 }`}
               >
-                <FiTrendingUp className="mr-2" /> Trends
+                <FiTrendingUp className="mr-1 sm:mr-2" /> 
+                <span className="whitespace-nowrap">Trends</span>
               </div>
             </Tab>
-            <Tab className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
+            <Tab className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
               <div
                 className={`flex items-center ${
                   activeTab === 2
@@ -321,39 +329,40 @@ const AnalyticsDashboard = () => {
                     : ''
                 }`}
               >
-                <FaExclamationTriangle className="mr-2" /> Expiring Drugs
+                <FaExclamationTriangle className="mr-1 sm:mr-2" /> 
+                <span className="whitespace-nowrap">Expiring Drugs</span>
               </div>
             </Tab>
           </TabList>
 
           {/* Overview Tab */}
           <TabPanel>
-            <div className="mt-6">
+            <div className="mt-4">
               {/* Statistics Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <StatCard
-                  icon={<FiUsers className="w-6 h-6" />}
+                  icon={<FiUsers className="w-5 h-5 sm:w-6 sm:h-6" />}
                   title="Total Users"
                   value={stats.totalUsers}
                   loading={stats.loading}
                   color="blue"
                 />
                 <StatCard
-                  icon={<FaRegHospital className="w-6 h-6" />}
+                  icon={<FaRegHospital className="w-5 h-5 sm:w-6 sm:h-6" />}
                   title="Institutes"
                   value={stats.totalInstitutes}
                   loading={stats.loading}
                   color="green"
                 />
                 <StatCard
-                  icon={<FiShoppingBag className="w-6 h-6" />}
+                  icon={<FiShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />}
                   title="Dispensaries"
                   value={stats.totalPharmacies}
                   loading={stats.loading}
                   color="purple"
                 />
                 <StatCard
-                  icon={<FaPills className="w-6 h-6" />}
+                  icon={<FaPills className="w-5 h-5 sm:w-6 sm:h-6" />}
                   title="Total Drugs"
                   value={stats.totalDrugs}
                   loading={stats.loading}
@@ -362,23 +371,23 @@ const AnalyticsDashboard = () => {
               </div>
 
               {/* Category Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <StatCard
-                  icon={<FaProcedures className="w-6 h-6" />}
+                  icon={<FaProcedures className="w-5 h-5 sm:w-6 sm:h-6" />}
                   title="IPD Drugs"
                   value={stats.ipdDrugs || 0}
                   loading={stats.loading}
                   color="red"
                 />
                 <StatCard
-                  icon={<FaClinicMedical className="w-6 h-6" />}
+                  icon={<FaClinicMedical className="w-5 h-5 sm:w-6 sm:h-6" />}
                   title="OPD Drugs"
                   value={stats.opdDrugs || 0}
                   loading={stats.loading}
                   color="blue"
                 />
                 <StatCard
-                  icon={<FaHandsHelping className="w-6 h-6" />}
+                  icon={<FaHandsHelping className="w-5 h-5 sm:w-6 sm:h-6" />}
                   title="OUTREACH Drugs"
                   value={stats.outreachDrugs || 0}
                   loading={stats.loading}
@@ -387,18 +396,18 @@ const AnalyticsDashboard = () => {
               </div>
 
               {/* Charts Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                 {/* User Roles Chart */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
                     User Distribution
                   </h3>
                   {chartsData.loading ? (
-                    <div className="flex justify-center items-center h-64">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                    <div className="h-64">
+                    <div className="h-48 sm:h-64">
                       <Pie
                         data={userRolesData}
                         options={{
@@ -406,7 +415,7 @@ const AnalyticsDashboard = () => {
                           maintainAspectRatio: false,
                           plugins: {
                             legend: {
-                              position: 'right',
+                              position: 'bottom',
                             },
                             tooltip: {
                               callbacks: {
@@ -433,24 +442,38 @@ const AnalyticsDashboard = () => {
                 </div>
 
                 {/* Drug Types Chart */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
                     Drug Types Distribution
                   </h3>
                   {chartsData.loading ? (
-                    <div className="flex justify-center items-center h-64">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                    <div className="h-64">
+                    <div style={{ height: drugTypesBarHeightPx }}>
                       <Bar
                         data={drugTypesData}
                         options={{
                           responsive: true,
                           maintainAspectRatio: false,
+                          indexAxis: 'y',
                           scales: {
-                            y: {
+                            x: {
                               beginAtZero: true,
+                              ticks: { precision: 0 },
+                            },
+                            y: {
+                              ticks: {
+                                autoSkip: false,
+                                font: { size: 10 },
+                                callback: (value) => {
+                                  const label = drugTypesData.labels?.[value] ?? String(value);
+                                  return label.length > 16
+                                    ? label.slice(0, 16) + '…'
+                                    : label;
+                                },
+                              },
                             },
                           },
                           plugins: {
@@ -460,9 +483,8 @@ const AnalyticsDashboard = () => {
                             tooltip: {
                               callbacks: {
                                 label: function (context) {
-                                  return `${context.dataset.label || ''}: ${
-                                    context.raw
-                                  }`;
+                                  const fullLabel = context.label || '';
+                                  return `${fullLabel}: ${context.raw}`;
                                 },
                               },
                             },
@@ -474,16 +496,16 @@ const AnalyticsDashboard = () => {
                 </div>
 
                 {/* Stock Levels Chart */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
                     Drug Stock Levels
                   </h3>
                   {chartsData.loading ? (
-                    <div className="flex justify-center items-center h-64">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                    <div className="h-64">
+                    <div className="h-48 sm:h-64">
                       <Pie
                         data={stockLevelsData}
                         options={{
@@ -491,7 +513,7 @@ const AnalyticsDashboard = () => {
                           maintainAspectRatio: false,
                           plugins: {
                             legend: {
-                              position: 'right',
+                              position: 'bottom',
                             },
                             tooltip: {
                               callbacks: {
@@ -517,16 +539,16 @@ const AnalyticsDashboard = () => {
                 </div>
 
                 {/* Order Statuses Chart */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
                     Order Status Distribution
                   </h3>
                   {chartsData.loading ? (
-                    <div className="flex justify-center items-center h-64">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                    <div className="h-64">
+                    <div className="h-48 sm:h-64">
                       <Pie
                         data={orderStatusesData}
                         options={{
@@ -534,7 +556,7 @@ const AnalyticsDashboard = () => {
                           maintainAspectRatio: false,
                           plugins: {
                             legend: {
-                              position: 'right',
+                              position: 'bottom',
                             },
                             tooltip: {
                               callbacks: {
@@ -565,19 +587,19 @@ const AnalyticsDashboard = () => {
 
           {/* Trends Tab */}
           <TabPanel>
-            <div className="mt-6">
-              <div className="grid grid-cols-1 gap-6 mb-8">
+            <div className="mt-4">
+              <div className="grid grid-cols-1 gap-4 mb-6">
                 {/* Revenue Trends Chart */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
                     Revenue Trends (Last 6 Months)
                   </h3>
                   {chartsData.loading ? (
-                    <div className="flex justify-center items-center h-96">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="flex justify-center items-center h-72 sm:h-96">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                    <div className="h-96">
+                    <div className="h-72 sm:h-96">
                       <Line
                         data={revenueTrendsData}
                         options={{
@@ -612,16 +634,16 @@ const AnalyticsDashboard = () => {
                 </div>
 
                 {/* Category Distribution Chart */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
                     Drug Category Distribution
                   </h3>
                   {chartsData.loading ? (
-                    <div className="flex justify-center items-center h-64">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                    <div className="h-64">
+                    <div className="h-48 sm:h-64">
                       <Pie
                         data={categoryDistributionData}
                         options={{
@@ -629,7 +651,7 @@ const AnalyticsDashboard = () => {
                           maintainAspectRatio: false,
                           plugins: {
                             legend: {
-                              position: 'right',
+                              position: 'bottom',
                             },
                             tooltip: {
                               callbacks: {
@@ -660,20 +682,20 @@ const AnalyticsDashboard = () => {
 
           {/* Expiring Drugs Tab */}
           <TabPanel>
-            <div className="mt-6">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div className="mt-4">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-4 sm:px-6 py-3 border-b border-gray-200 bg-gray-50">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center mb-3 sm:mb-0">
-                      <FaExclamationTriangle className="text-yellow-500 mr-3 text-lg" />
-                      <h3 className="text-lg font-semibold text-gray-800">
+                    <div className="flex items-center mb-2 sm:mb-0">
+                      <FaExclamationTriangle className="text-yellow-500 mr-2 sm:mr-3 text-base sm:text-lg" />
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800">
                         Drugs Expiring Within
                         <select
                           value={pagination.daysThreshold}
                           onChange={(e) =>
                             handleDaysChange(Number(e.target.value))
                           }
-                          className="ml-3 border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                          className="ml-2 sm:ml-3 border border-gray-300 rounded-md px-2 sm:px-3 py-1 text-xs sm:text-sm focus:ring-blue-500 focus:border-blue-500"
                         >
                           <option value={10}>10 Days</option>
                           <option value={30}>30 Days</option>
@@ -682,7 +704,7 @@ const AnalyticsDashboard = () => {
                         </select>
                       </h3>
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-xs sm:text-sm text-gray-500">
                       Showing {(pagination.page - 1) * pagination.limit + 1}-
                       {Math.min(
                         pagination.page * pagination.limit,
@@ -694,8 +716,8 @@ const AnalyticsDashboard = () => {
                 </div>
 
                 {drugsLoading ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                  <div className="flex justify-center items-center h-48 sm:h-64">
+                    <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
                 ) : (
                   <>
@@ -703,22 +725,22 @@ const AnalyticsDashboard = () => {
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Drug Name
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Batch
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Stock
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Expiry Date
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Days Left
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Price (₹)
                             </th>
                           </tr>
@@ -730,20 +752,20 @@ const AnalyticsDashboard = () => {
                                 key={`${drug.id}-${drug.batch_no}`}
                                 className="hover:bg-gray-50 transition-colors"
                               >
-                                <td className="px-6 py-4">
-                                  <div className="font-medium text-gray-900">
+                                <td className="px-4 sm:px-6 py-4">
+                                  <div className="font-medium text-sm sm:text-base text-gray-900">
                                     {drug.name}
                                   </div>
-                                  <div className="text-sm text-gray-500">
+                                  <div className="text-xs sm:text-sm text-gray-500">
                                     {drug.description}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                                   {drug.batch_no || 'N/A'}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                                   <span
-                                    className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    className={`px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full ${
                                       drug.stock < 10
                                         ? 'bg-red-100 text-red-800'
                                         : 'bg-green-100 text-green-800'
@@ -752,7 +774,7 @@ const AnalyticsDashboard = () => {
                                     {drug.stock} units
                                   </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                                   {new Date(drug.exp_date).toLocaleDateString(
                                     'en-US',
                                     {
@@ -762,9 +784,9 @@ const AnalyticsDashboard = () => {
                                     }
                                   )}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                                   <span
-                                    className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    className={`px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full ${
                                       drug.days_until_expiry < 7
                                         ? 'bg-red-100 text-red-800'
                                         : drug.days_until_expiry < 30
@@ -775,7 +797,7 @@ const AnalyticsDashboard = () => {
                                     {drug.days_until_expiry} days
                                   </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                                   {typeof drug.price === 'number'
                                     ? drug.price.toLocaleString('en-IN', {
                                         minimumFractionDigits: 2,
@@ -787,13 +809,13 @@ const AnalyticsDashboard = () => {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="6" className="px-6 py-8 text-center">
+                              <td colSpan="6" className="px-4 sm:px-6 py-8 text-center">
                                 <div className="flex flex-col items-center justify-center text-gray-500">
-                                  <FaExclamationTriangle className="h-10 w-10 mb-2 text-yellow-400" />
-                                  <h4 className="text-lg font-medium">
+                                  <FaExclamationTriangle className="h-8 w-8 sm:h-10 sm:w-10 mb-2 text-yellow-400" />
+                                  <h4 className="text-base sm:text-lg font-medium">
                                     No expiring drugs found
                                   </h4>
-                                  <p className="text-sm">
+                                  <p className="text-xs sm:text-sm">
                                     Try adjusting your days threshold
                                   </p>
                                 </div>
@@ -806,7 +828,7 @@ const AnalyticsDashboard = () => {
 
                     {/* Pagination */}
                     {pagination.totalPages > 1 && (
-                      <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                      <div className="px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50">
                         <div className="flex items-center justify-between">
                           <div className="flex-1 flex justify-between sm:hidden">
                             <button
@@ -814,7 +836,7 @@ const AnalyticsDashboard = () => {
                                 handlePageChange(pagination.page - 1)
                               }
                               disabled={pagination.page === 1}
-                              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               Previous
                             </button>
@@ -825,14 +847,14 @@ const AnalyticsDashboard = () => {
                               disabled={
                                 pagination.page >= pagination.totalPages
                               }
-                              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="ml-3 relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               Next
                             </button>
                           </div>
                           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                             <div>
-                              <p className="text-sm text-gray-700">
+                              <p className="text-xs sm:text-sm text-gray-700">
                                 Page{' '}
                                 <span className="font-medium">
                                   {pagination.page}
@@ -853,11 +875,11 @@ const AnalyticsDashboard = () => {
                                     handlePageChange(pagination.page - 1)
                                   }
                                   disabled={pagination.page === 1}
-                                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="relative inline-flex items-center px-2 py-1.5 rounded-l-md border border-gray-300 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <span className="sr-only">Previous</span>
                                   <FiChevronLeft
-                                    className="h-5 w-5"
+                                    className="h-4 w-4 sm:h-5 sm:w-5"
                                     aria-hidden="true"
                                   />
                                 </button>
@@ -885,7 +907,7 @@ const AnalyticsDashboard = () => {
                                         onClick={() =>
                                           handlePageChange(pageNum)
                                         }
-                                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                        className={`relative inline-flex items-center px-3 py-1.5 border text-xs font-medium ${
                                           pagination.page === pageNum
                                             ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
                                             : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
@@ -903,11 +925,11 @@ const AnalyticsDashboard = () => {
                                   disabled={
                                     pagination.page >= pagination.totalPages
                                   }
-                                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="relative inline-flex items-center px-2 py-1.5 rounded-r-md border border-gray-300 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <span className="sr-only">Next</span>
                                   <FiChevronRight
-                                    className="h-5 w-5"
+                                    className="h-4 w-4 sm:h-5 sm:w-5"
                                     aria-hidden="true"
                                   />
                                 </button>
@@ -967,19 +989,19 @@ const StatCard = ({ icon, title, value, loading, color = 'blue' }) => {
 
   return (
     <div
-      className={`${selectedColor.bg} p-5 rounded-xl shadow-sm border border-gray-200 transition-all hover:shadow-md`}
+      className={`${selectedColor.bg} p-4 sm:p-5 rounded-lg shadow-sm border border-gray-200 transition-all hover:shadow-md`}
     >
       <div className="flex items-start">
-        <div className={`${selectedColor.iconBg} p-3 rounded-lg mr-4`}>
+        <div className={`${selectedColor.iconBg} p-2 sm:p-3 rounded-lg mr-3 sm:mr-4`}>
           {icon}
         </div>
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
+          <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">{title}</p>
           {loading ? (
-            <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-6 sm:h-8 w-16 sm:w-20 bg-gray-200 rounded animate-pulse"></div>
           ) : (
             <div className="flex items-end justify-between">
-              <h3 className={`text-2xl font-bold ${selectedColor.text}`}>
+              <h3 className={`text-xl sm:text-2xl font-bold ${selectedColor.text}`}>
                 {value}
               </h3>
             </div>

@@ -132,6 +132,28 @@ const AdminOrderHistory = () => {
     }
   };
 
+  // Filter orders based on transaction type and sender role
+  const getFilteredOrders = () => {
+    if (filters.type === 'all') return orders;
+
+    return orders.filter(order => {
+      if (filters.type === 'dispensary') {
+        // Show only dispensary to institute orders
+        return order.transaction_type === 'institute' && 
+               order.sender_role === 'pharmacy' && 
+               order.recipient_role === 'institute';
+      } else if (filters.type === 'institute') {
+        // Show only institute to institute orders
+        return order.transaction_type === 'institute' && 
+               order.sender_role === 'institute' && 
+               order.recipient_role === 'institute';
+      }
+      return true;
+    });
+  };
+
+  const filteredOrders = getFilteredOrders();
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -203,8 +225,8 @@ const AdminOrderHistory = () => {
             onChange={(e) => handleFilterChange('type', e.target.value)}
           >
             <option value="all">All Types</option>
-            <option value="institute">Institute Orders</option>
-            <option value="dispensary">Dispensary Orders</option>
+            <option value="dispensary">Dispensary to Institute</option>
+            <option value="institute">Institute to Institute</option>
             <option value="manufacturer">Manufacturer Orders</option>
           </select>
         </div>
@@ -246,7 +268,7 @@ const AdminOrderHistory = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {orders.map((order) => (
+              {filteredOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {order.order_no}

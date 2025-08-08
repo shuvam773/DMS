@@ -146,9 +146,9 @@ const SellerPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Manage Orders</h1>
+    <div className="container mx-auto px-4 py-6 sm:py-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold">Manage Orders</h1>
         <div className="flex space-x-2">
           <select
             value={selectedStatus}
@@ -179,9 +179,9 @@ const SellerPage = () => {
           {orders.map((order) => (
             <div
               key={order.order_id}
-              className="border-b last:border-b-0 bg-gray-300 rounded-2xl p-8"
+              className="border-b last:border-b-0 bg-gray-300 rounded-2xl p-4 sm:p-8"
             >
-              <div className="p-4 flex justify-between items-center">
+              <div className="p-0 sm:p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                 <div>
                   <h3 className="font-medium">Order #{order.order_no}</h3>
                   <p className="text-sm text-gray-600">
@@ -191,7 +191,7 @@ const SellerPage = () => {
                     Buyer: {order.buyer_name}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="text-left sm:text-right">
                   <p className="font-semibold">
                     ₹{parseFloat(order.total_amount || 0).toFixed(2)}
                   </p>
@@ -201,10 +201,10 @@ const SellerPage = () => {
                 </div>
               </div>
 
-              <div className="p-4">
-                <div className="flex justify-between text-sm mb-4">
+              <div className="p-0 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:justify-between text-sm mb-4 gap-2">
                   <span>Items: {order.item_count}</span>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2">
                     {['pending', 'approved', 'rejected', 'shipped'].map(
                       (status) => (
                         <span
@@ -225,7 +225,7 @@ const SellerPage = () => {
                   {order.items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex justify-between items-center p-3 bg-gray-50 rounded"
+                      className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-gray-50 rounded gap-2"
                     >
                       <div className="flex-1">
                         <p className="font-medium">{item.drug_name}</p>

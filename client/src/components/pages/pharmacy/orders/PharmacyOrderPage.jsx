@@ -202,12 +202,12 @@ const PharmacyOrderPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Indent to Institute</h1>
+    <div className="container mx-auto px-4 py-6 sm:py-8">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Indent to Institute</h1>
 
       {/* Institute Display */}
-      <div className="mb-6 bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold mb-3">Associated Institute</h2>
+      <div className="mb-6 bg-white rounded-lg shadow p-4 sm:p-6">
+        <h2 className="text-base sm:text-lg font-semibold mb-3">Associated Institute</h2>
 
         {loading.institute ? (
           <div className="flex items-center justify-center p-4">
@@ -246,7 +246,7 @@ const PharmacyOrderPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Drug Selection Panel */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
+        <div className="lg:col-span-2 bg-white rounded-lg shadow p-4 sm:p-6">
           {institute ? (
             <>
               <div className="mb-4">
@@ -310,8 +310,8 @@ const PharmacyOrderPage = () => {
         </div>
 
         {/* Order Summary Panel */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center">
             <FiShoppingCart className="mr-2" /> Indent Summary
           </h2>
 

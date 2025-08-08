@@ -344,7 +344,7 @@ const DrugsTable = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
           <h2 className="text-2xl font-bold text-gray-800 flex items-center">
             <FaPills className="mr-2 text-blue-600" />
             Drugs Inventory

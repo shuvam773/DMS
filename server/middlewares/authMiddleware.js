@@ -21,7 +21,7 @@ const verifyToken = (req, res, next) => {
                 email: decoded.email
             };
             
-            console.log("Decoded user:", req.user); // Debug log
+            console.log("Decoded user:", req.user); 
             next();
 
         } catch (err) {

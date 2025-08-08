@@ -1,4 +1,80 @@
-// controllers/admin/orderController.js
+const getOrderDetails = async (req, res) => {
+  const db = req.app.locals.db;
+  const { orderId } = req.params;
+
+  try {
+    // Get order details
+    const orderResult = await db.query(
+      `SELECT 
+        o.*, 
+        u1.name as sender_name,
+        u1.role as sender_role,
+        CASE 
+          WHEN o.transaction_type = 'manufacturer' THEN (
+            SELECT oi.manufacturer_name 
+            FROM order_items oi 
+            WHERE oi.order_id = o.id 
+            LIMIT 1
+          )
+          ELSE u2.name
+        END as recipient_name,
+        CASE 
+          WHEN o.transaction_type = 'manufacturer' THEN 'manufacturer'
+          ELSE u2.role
+        END as recipient_role
+       FROM orders o
+       JOIN users u1 ON o.user_id = u1.id
+       LEFT JOIN users u2 ON o.recipient_id = u2.id
+       WHERE o.id = $1`,
+      [orderId]
+    );
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({
+        status: false,
+        message: 'Order not found',
+      });
+    }
+
+    const order = orderResult.rows[0];
+
+    // Get order items - simplified to use only order_items.batch_no
+    const itemsQuery = `
+      SELECT 
+        oi.id, 
+        COALESCE(d.name, oi.custom_name) as drug_name,
+        oi.manufacturer_name,
+        oi.quantity, 
+        oi.unit_price,
+        (oi.quantity * oi.unit_price) as total_price,
+        oi.status,
+        oi.batch_no,
+        d.id as drug_id
+      FROM order_items oi
+      LEFT JOIN drugs d ON oi.drug_id = d.id
+      WHERE oi.order_id = $1
+      ORDER BY oi.created_at
+    `;
+
+    const itemsResult = await db.query(itemsQuery, [orderId]);
+
+    res.json({
+      status: true,
+      order: {
+        ...order,
+        items: itemsResult.rows,
+      },
+    });
+  } catch (err) {
+    console.error('Error in getOrderDetails:', err);
+    res.status(500).json({
+      status: false,
+      message: 'Server error while fetching order details',
+      error: err.message,
+    });
+  }
+};
+
 const listAllOrders = async (req, res) => {
   const db = req.app.locals.db;
   const { status, transaction_type, page = 1, limit = 10, search } = req.query;
@@ -31,6 +107,7 @@ const listAllOrders = async (req, res) => {
         u2.name ILIKE $${paramCount} OR
         oi.manufacturer_name ILIKE $${paramCount} OR
         oi.custom_name ILIKE $${paramCount} OR
+        oi.batch_no ILIKE $${paramCount} OR
         EXISTS (
           SELECT 1 FROM order_items oi2
           LEFT JOIN drugs d ON oi2.drug_id = d.id
@@ -45,7 +122,7 @@ const listAllOrders = async (req, res) => {
     // Build the where clause
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    // Main orders query - updated to handle manufacturer orders
+    // Main orders query
     const ordersQuery = `
       SELECT 
         o.id, 
@@ -129,84 +206,7 @@ const listAllOrders = async (req, res) => {
     res.status(500).json({
       status: false,
       message: 'Server error while fetching order history',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
-    });
-  }
-};
-
-const getOrderDetails = async (req, res) => {
-  const db = req.app.locals.db;
-  const { orderId } = req.params;
-
-  try {
-    // Get order details
-    const orderResult = await db.query(
-      `SELECT 
-        o.*, 
-        u1.name as sender_name,
-        u1.role as sender_role,
-        CASE 
-          WHEN o.transaction_type = 'manufacturer' THEN (
-            SELECT oi.manufacturer_name 
-            FROM order_items oi 
-            WHERE oi.order_id = o.id 
-            LIMIT 1
-          )
-          ELSE u2.name
-        END as recipient_name,
-        CASE 
-          WHEN o.transaction_type = 'manufacturer' THEN 'manufacturer'
-          ELSE u2.role
-        END as recipient_role
-       FROM orders o
-       JOIN users u1 ON o.user_id = u1.id
-       LEFT JOIN users u2 ON o.recipient_id = u2.id
-       WHERE o.id = $1`,
-      [orderId]
-    );
-
-    if (orderResult.rows.length === 0) {
-      return res.status(404).json({
-        status: false,
-        message: 'Order not found',
-      });
-    }
-
-    const order = orderResult.rows[0];
-
-    // Get order items
-    const itemsQuery = `
-      SELECT 
-        oi.id, 
-        COALESCE(d.name, oi.custom_name) as drug_name,
-        oi.manufacturer_name,
-        oi.quantity, 
-        oi.unit_price,
-        (oi.quantity * oi.unit_price) as total_price,
-        oi.status,
-        oi.batch_no,
-        d.id as drug_id
-      FROM order_items oi
-      LEFT JOIN drugs d ON oi.drug_id = d.id
-      WHERE oi.order_id = $1
-      ORDER BY oi.created_at
-    `;
-
-    const itemsResult = await db.query(itemsQuery, [orderId]);
-
-    res.json({
-      status: true,
-      order: {
-        ...order,
-        items: itemsResult.rows,
-      },
-    });
-  } catch (err) {
-    console.error('Error in getOrderDetails:', err);
-    res.status(500).json({
-      status: false,
-      message: 'Server error while fetching order details',
-      error: err.message,
+      error:err.message,
     });
   }
 };

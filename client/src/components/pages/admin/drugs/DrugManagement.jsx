@@ -145,8 +145,8 @@ const DrugManagement = () => {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6">Drug Types & Names Management</h2>
+    <div className="p-4 md:p-6">
+      <h2 className="text-xl md:text-2xl font-bold mb-6">Drug Types & Names Management</h2>
       
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
@@ -154,23 +154,23 @@ const DrugManagement = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Drug Types Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-xl font-semibold mb-4">Drug Types</h3>
+        <div className="bg-white rounded-lg shadow p-4 md:p-6">
+          <h3 className="text-lg md:text-xl font-semibold mb-4">Drug Types</h3>
           
-          <div className="flex mb-4">
+          <div className="flex flex-col sm:flex-row mb-4 gap-2">
             <input
               type="text"
               value={newTypeName}
               onChange={(e) => setNewTypeName(e.target.value)}
               placeholder="New drug type name"
-              className="flex-1 border rounded-l px-3 py-2"
+              className="flex-1 border rounded px-3 py-2"
             />
             <button
               onClick={handleAddType}
               disabled={loading}
-              className="bg-blue-600 text-white px-4 py-2 rounded-r hover:bg-blue-700 disabled:bg-blue-300"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
             >
               <FiPlus className="inline mr-1" /> Add
             </button>
@@ -201,8 +201,8 @@ const DrugManagement = () => {
         </div>
 
         {/* Drug Names Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-xl font-semibold mb-4">
+        <div className="bg-white rounded-lg shadow p-4 md:p-6">
+          <h3 className="text-lg md:text-xl font-semibold mb-4">
             {selectedType 
               ? `Drug Names (${drugTypes.find(t => t.id === selectedType)?.type_name || ''})`
               : 'Select a drug type to view names'}
@@ -210,18 +210,18 @@ const DrugManagement = () => {
           
           {selectedType && (
             <>
-              <div className="flex mb-4">
+              <div className="flex flex-col sm:flex-row mb-4 gap-2">
                 <input
                   type="text"
                   value={newDrugName}
                   onChange={(e) => setNewDrugName(e.target.value)}
                   placeholder="New drug name"
-                  className="flex-1 border rounded-l px-3 py-2"
+                  className="flex-1 border rounded px-3 py-2"
                 />
                 <button
                   onClick={handleAddDrugName}
                   disabled={loading}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-r hover:bg-blue-700 disabled:bg-blue-300"
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
                 >
                   <FiPlus className="inline mr-1" /> Add
                 </button>

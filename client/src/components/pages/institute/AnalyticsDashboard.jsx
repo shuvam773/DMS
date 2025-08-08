@@ -171,19 +171,19 @@ const AnalyticsDashboard = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+      <div className="w-full mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
               Institute Analytics Dashboard
             </h1>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               Comprehensive overview of your institute's performance and metrics
             </p>
           </div>
-          <div className="text-sm text-gray-500 mt-2 md:mt-0">
+          <div className="text-xs sm:text-sm text-gray-500 mt-2 md:mt-0">
             Last updated: {lastUpdated.toLocaleString()}
           </div>
         </div>
@@ -193,8 +193,8 @@ const AnalyticsDashboard = () => {
           selectedIndex={activeTab}
           onSelect={(index) => setActiveTab(index)}
         >
-          <TabList className="flex border-b border-gray-200">
-            <Tab className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
+          <TabList className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200">
+            <Tab className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
               <div
                 className={`flex items-center ${
                   activeTab === 0
@@ -202,11 +202,11 @@ const AnalyticsDashboard = () => {
                     : ''
                 }`}
               >
-                <FiPieChart className="mr-2" /> Overview
+                <FiPieChart className="mr-1 sm:mr-2" /> Overview
               </div>
             </Tab>
 
-            <Tab className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
+            <Tab className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
               <div
                 className={`flex items-center ${
                   activeTab === 1
@@ -214,7 +214,7 @@ const AnalyticsDashboard = () => {
                     : ''
                 }`}
               >
-                <FaExclamationTriangle className="mr-2" /> Expiring Drugs
+                <FaExclamationTriangle className="mr-1 sm:mr-2" /> Expiring Drugs
               </div>
             </Tab>
           </TabList>
@@ -264,16 +264,16 @@ const AnalyticsDashboard = () => {
               {/* Charts Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Drug Distribution Chart */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
                     Drug Distribution by Category
                   </h3>
                   {chartsData.loading ? (
-                    <div className="flex justify-center items-center h-64">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                    <div className="h-64">
+                    <div className="h-48 sm:h-64">
                       <Pie
                         data={drugDistributionData}
                         options={{
@@ -281,7 +281,7 @@ const AnalyticsDashboard = () => {
                           maintainAspectRatio: false,
                           plugins: {
                             legend: {
-                              position: 'right',
+                              position: 'bottom',
                             },
                             tooltip: {
                               callbacks: {
@@ -307,16 +307,16 @@ const AnalyticsDashboard = () => {
                 </div>
 
                 {/* Stock Levels Chart */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
                     Stock Levels
                   </h3>
                   {chartsData.loading ? (
-                    <div className="flex justify-center items-center h-64">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                    <div className="h-64">
+                    <div className="h-48 sm:h-64">
                       <Bar
                         data={stockLevelsData}
                         options={{
@@ -354,18 +354,18 @@ const AnalyticsDashboard = () => {
           <TabPanel>
             <div className="mt-6">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center mb-3 sm:mb-0">
-                      <FaExclamationTriangle className="text-yellow-500 mr-3 text-lg" />
-                      <h3 className="text-lg font-semibold text-gray-800">
+                    <div className="flex items-center mb-2 sm:mb-0">
+                      <FaExclamationTriangle className="text-yellow-500 mr-2 sm:mr-3 text-base sm:text-lg" />
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800">
                         Drugs Expiring Within
                         <select
                           value={pagination.daysThreshold}
                           onChange={(e) =>
                             handleDaysChange(Number(e.target.value))
                           }
-                          className="ml-3 border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                          className="ml-2 sm:ml-3 border border-gray-300 rounded-md px-2 sm:px-3 py-1 text-xs sm:text-sm focus:ring-blue-500 focus:border-blue-500"
                         >
                           <option value={10}>10 Days</option>
                           <option value={30}>30 Days</option>
@@ -374,7 +374,7 @@ const AnalyticsDashboard = () => {
                         </select>
                       </h3>
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-xs sm:text-sm text-gray-500">
                       Showing {(pagination.page - 1) * pagination.limit + 1}-
                       {Math.min(
                         pagination.page * pagination.limit,
@@ -395,22 +395,22 @@ const AnalyticsDashboard = () => {
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Drug Name
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Batch
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Stock
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Expiry Date
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Days Left
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Price (₹)
                             </th>
                           </tr>
@@ -422,18 +422,18 @@ const AnalyticsDashboard = () => {
                                 key={`${drug.id}-${drug.batch_no}`}
                                 className="hover:bg-gray-50 transition-colors"
                               >
-                                <td className="px-6 py-4">
-                                  <div className="font-medium text-gray-900">
+                                <td className="px-4 sm:px-6 py-4">
+                                  <div className="font-medium text-sm sm:text-base text-gray-900">
                                     {drug.name}
                                   </div>
-                                  <div className="text-sm text-gray-500">
+                                  <div className="text-xs sm:text-sm text-gray-500">
                                     {drug.description}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                                   {drug.batch_no || 'N/A'}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                                   <span
                                     className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                       drug.stock < 10
@@ -444,7 +444,7 @@ const AnalyticsDashboard = () => {
                                     {drug.stock} units
                                   </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                                   {new Date(drug.exp_date).toLocaleDateString(
                                     'en-US',
                                     {
@@ -454,7 +454,7 @@ const AnalyticsDashboard = () => {
                                     }
                                   )}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                                   <span
                                     className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                       drug.days_until_expiry < 7
@@ -467,7 +467,7 @@ const AnalyticsDashboard = () => {
                                     {drug.days_until_expiry} days
                                   </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                                   {typeof drug.price === 'number'
                                     ? drug.price.toLocaleString('en-IN', {
                                         minimumFractionDigits: 2,
@@ -479,13 +479,13 @@ const AnalyticsDashboard = () => {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="6" className="px-6 py-8 text-center">
+                              <td colSpan="6" className="px-4 sm:px-6 py-8 text-center">
                                 <div className="flex flex-col items-center justify-center text-gray-500">
-                                  <FaExclamationTriangle className="h-10 w-10 mb-2 text-yellow-400" />
-                                  <h4 className="text-lg font-medium">
+                                  <FaExclamationTriangle className="h-8 w-8 sm:h-10 sm:w-10 mb-2 text-yellow-400" />
+                                  <h4 className="text-base sm:text-lg font-medium">
                                     No expiring drugs found
                                   </h4>
-                                  <p className="text-sm">
+                                  <p className="text-xs sm:text-sm">
                                     Try adjusting your days threshold
                                   </p>
                                 </div>
@@ -498,7 +498,7 @@ const AnalyticsDashboard = () => {
 
                     {/* Pagination */}
                     {pagination.totalPages > 1 && (
-                      <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                      <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50">
                         <div className="flex items-center justify-between">
                           <div className="flex-1 flex justify-between sm:hidden">
                             <button

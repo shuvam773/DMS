@@ -177,9 +177,9 @@ const Chatbot = () => {
   if (!user) return null;
 
   return (
-    <div className={`fixed bottom-4 right-4 z-50 ${isOpen ? 'w-[350px]' : ''}`}>
+    <div className={`fixed bottom-4 right-4 z-50 ${isOpen ? 'w-[92vw] sm:w-[350px]' : ''}`}>
       {isOpen ? (
-        <div className="bg-white rounded-lg shadow-lg flex flex-col h-[500px] overflow-hidden border border-gray-200">
+        <div className="bg-white rounded-lg shadow-lg flex flex-col h-[70vh] sm:h-[500px] overflow-hidden border border-gray-200 max-w-[92vw]">
           <div className="bg-green-600 text-white p-4 flex justify-between items-center">
             <h3 className="font-semibold">Drug Management Assistant</h3>
             <button

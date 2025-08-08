@@ -169,19 +169,19 @@ const AnalyticsDashboard = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
               Dispensary Analytics Dashboard
             </h1>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               Overview of your dispensary inventory and metrics
             </p>
           </div>
-          <div className="text-sm text-gray-500 mt-2 md:mt-0">
+          <div className="text-xs sm:text-sm text-gray-500 mt-2 md:mt-0">
             Last updated: {lastUpdated.toLocaleString()}
           </div>
         </div>
@@ -191,8 +191,8 @@ const AnalyticsDashboard = () => {
           selectedIndex={activeTab}
           onSelect={(index) => setActiveTab(index)}
         >
-          <TabList className="flex border-b border-gray-200">
-            <Tab className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
+          <TabList className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200">
+            <Tab className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
               <div
                 className={`flex items-center ${
                   activeTab === 0
@@ -200,10 +200,10 @@ const AnalyticsDashboard = () => {
                     : ''
                 }`}
               >
-                <FiPieChart className="mr-2" /> Overview
+                <FiPieChart className="mr-1 sm:mr-2" /> Overview
               </div>
             </Tab>
-            <Tab className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
+            <Tab className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
               <div
                 className={`flex items-center ${
                   activeTab === 1
@@ -211,7 +211,7 @@ const AnalyticsDashboard = () => {
                     : ''
                 }`}
               >
-                <FaExclamationTriangle className="mr-2" /> Expiring Drugs
+                <FaExclamationTriangle className="mr-1 sm:mr-2" /> Expiring Drugs
               </div>
             </Tab>
           </TabList>
@@ -254,16 +254,16 @@ const AnalyticsDashboard = () => {
               {/* Charts Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Stock Levels Chart */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">
                     Stock Levels
                   </h3>
                   {chartsData.loading ? (
-                    <div className="flex justify-center items-center h-64">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                    <div className="h-64">
+                    <div className="h-48 sm:h-64">
                       <Pie
                         data={stockLevelsData}
                         options={{
@@ -271,7 +271,7 @@ const AnalyticsDashboard = () => {
                           maintainAspectRatio: false,
                           plugins: {
                             legend: {
-                              position: 'right',
+                              position: 'bottom',
                             },
                             tooltip: {
                               callbacks: {
@@ -297,16 +297,16 @@ const AnalyticsDashboard = () => {
                 </div>
 
                 {/* Category Distribution Chart */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">
                     Drug Category Distribution
                   </h3>
                   {chartsData.loading ? (
-                    <div className="flex justify-center items-center h-64">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                    <div className="h-64">
+                    <div className="h-48 sm:h-64">
                       <Bar
                         data={categoryDistributionData}
                         options={{
