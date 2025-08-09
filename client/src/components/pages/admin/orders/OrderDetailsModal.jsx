@@ -145,16 +145,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                   <span className="font-medium">Date:</span>{' '}
                   {new Date(order.created_at).toLocaleString()}
                 </p>
-                <p>
-                  <span className="font-medium">Status:</span>
-                  <span
-                    className={`ml-2 px-2 py-1 text-xs rounded-full ${getStatusColor(
-                      order.overall_status
-                    )}`}
-                  >
-                    {order.overall_status}
-                  </span>
-                </p>
+                
                 <p>
                   <span className="font-medium">Total Amount:</span> ₹
                   {formatCurrency(order.total_amount)}

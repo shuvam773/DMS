@@ -32,12 +32,16 @@ const AdminOrderHistory = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
+      const apiTransactionType =
+        filters.type === 'dispensary' ? 'pharmacy' : filters.type;
+
       const response = await api.get('/admin/orders', {
         params: {
           page: pagination.page,
           limit: pagination.limit,
           status: filters.status !== 'all' ? filters.status : undefined,
-          transaction_type: filters.type !== 'all' ? filters.type : undefined,
+          transaction_type:
+            apiTransactionType !== 'all' ? apiTransactionType : undefined,
           search: searchTerm || undefined,
         },
       });
@@ -117,31 +121,6 @@ const AdminOrderHistory = () => {
     }
   };
 
-  // Filter orders based on transaction type and sender role
-  const getFilteredOrders = () => {
-    if (filters.type === 'all') return orders;
-
-    return orders.filter((order) => {
-      if (filters.type === 'dispensary') {
-        // Show only dispensary to institute orders
-        return (
-          order.transaction_type === 'institute' &&
-          order.sender_role === 'pharmacy' &&
-          order.recipient_role === 'institute'
-        );
-      } else if (filters.type === 'institute') {
-        // Show only institute to institute orders
-        return (
-          order.transaction_type === 'institute' &&
-          order.sender_role === 'institute' &&
-          order.recipient_role === 'institute'
-        );
-      }
-      return true;
-    });
-  };
-
-  const filteredOrders = getFilteredOrders();
 
   if (loading) {
     return (
@@ -255,7 +234,7 @@ const AdminOrderHistory = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredOrders.map((order) => (
+              {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {order.order_no}

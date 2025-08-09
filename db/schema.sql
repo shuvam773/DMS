@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS orders (
   order_no TEXT NOT NULL UNIQUE,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   recipient_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-  transaction_type TEXT NOT NULL CHECK (transaction_type IN ('institute', 'manufacturer')),
+  transaction_type TEXT NOT NULL CHECK (transaction_type IN ('institute', 'manufacturer', 'pharmacy')),
   notes TEXT,
   total_amount DECIMAL(12,2) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

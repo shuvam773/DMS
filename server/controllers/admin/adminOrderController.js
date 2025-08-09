@@ -120,39 +120,45 @@ const listAllOrders = async (req, res) => {
     }
 
     // Build the where clause
-    const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+    const whereClause =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     // Main orders query
     const ordersQuery = `
-      SELECT 
-        o.id, 
-        o.order_no,
-        o.transaction_type,
-        o.total_amount, 
-        o.created_at, 
-        o.updated_at,
-        o.notes,
-        u1.name as sender_name,
-        u1.role as sender_role,
-        CASE 
-          WHEN o.transaction_type = 'manufacturer' THEN oi.manufacturer_name
-          ELSE u2.name
-        END as recipient_name,
-        CASE 
-          WHEN o.transaction_type = 'manufacturer' THEN 'manufacturer'
-          ELSE u2.role
-        END as recipient_role,
-        COUNT(oi.id) as item_count,
-        MIN(oi.status) as overall_status
-      FROM orders o
-      JOIN users u1 ON o.user_id = u1.id
-      LEFT JOIN users u2 ON o.recipient_id = u2.id
-      JOIN order_items oi ON o.id = oi.order_id
-      ${whereClause}
-      GROUP BY o.id, u1.name, u1.role, u2.name, u2.role, oi.manufacturer_name
-      ORDER BY o.created_at DESC
-      LIMIT $${paramCount} OFFSET $${paramCount + 1}
-    `;
+SELECT
+  o.id,
+  o.order_no,
+  o.transaction_type,
+  o.total_amount,
+  o.created_at,
+  o.updated_at,
+  o.notes,
+  u1.name as sender_name,
+  u1.role as sender_role,
+  CASE
+    WHEN o.transaction_type = 'manufacturer' THEN (
+      SELECT oi.manufacturer_name
+      FROM order_items oi
+      WHERE oi.order_id = o.id
+      LIMIT 1
+    )
+    ELSE u2.name
+  END as recipient_name,
+  CASE
+    WHEN o.transaction_type = 'manufacturer' THEN 'manufacturer'
+    ELSE u2.role
+  END as recipient_role,
+  COUNT(oi.id) as item_count,
+  MIN(oi.status) as overall_status
+FROM orders o
+JOIN users u1 ON o.user_id = u1.id
+LEFT JOIN users u2 ON o.recipient_id = u2.id
+JOIN order_items oi ON o.id = oi.order_id
+${whereClause}
+GROUP BY o.id, u1.id, u2.id
+ORDER BY o.created_at DESC
+LIMIT $${paramCount} OFFSET $${paramCount + 1}
+`;
 
     // Count query for pagination
     const countQuery = `
@@ -206,7 +212,7 @@ const listAllOrders = async (req, res) => {
     res.status(500).json({
       status: false,
       message: 'Server error while fetching order history',
-      error:err.message,
+      error: err.message,
     });
   }
 };
