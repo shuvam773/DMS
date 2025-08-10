@@ -149,9 +149,19 @@ const AdminOrderHistory = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Order History</h1>
-
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-800">Order History</h1>
+          <div className="md:hidden">
+            <button
+              onClick={fetchOrders}
+              className="flex items-center space-x-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              <FiRefreshCw className="text-sm" />
+              <span>Refresh</span>
+            </button>
+          </div>
+        </div>
+        <div className="hidden md:flex items-center space-x-2">
           <button
             onClick={fetchOrders}
             className="flex items-center space-x-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
