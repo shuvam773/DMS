@@ -164,6 +164,8 @@ LIMIT $${paramCount} OFFSET $${paramCount + 1}
     const countQuery = `
       SELECT COUNT(DISTINCT o.id) as total
       FROM orders o
+      JOIN users u1 ON o.user_id = u1.id
+      LEFT JOIN users u2 ON o.recipient_id = u2.id
       JOIN order_items oi ON o.id = oi.order_id
       ${whereClause}
     `;

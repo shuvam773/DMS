@@ -17,6 +17,7 @@ const AdminOrderHistory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
   const [filters, setFilters] = useState({
     status: 'all',
     type: 'all',
@@ -42,7 +43,7 @@ const AdminOrderHistory = () => {
           status: filters.status !== 'all' ? filters.status : undefined,
           transaction_type:
             apiTransactionType !== 'all' ? apiTransactionType : undefined,
-          search: searchTerm || undefined,
+          search: debouncedSearchTerm || undefined,
         },
       });
 
@@ -59,8 +60,18 @@ const AdminOrderHistory = () => {
   };
 
   useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+  useEffect(() => {
     fetchOrders();
-  }, [pagination.page, filters, searchTerm]);
+  }, [pagination.page, filters, debouncedSearchTerm]);
 
   const handlePageChange = (newPage) => {
     setPagination((prev) => ({
