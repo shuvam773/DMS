@@ -17,7 +17,7 @@ const AdminOrderHistory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+  const [submittedSearchTerm, setSubmittedSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     status: 'all',
     type: 'all',
@@ -43,7 +43,7 @@ const AdminOrderHistory = () => {
           status: filters.status !== 'all' ? filters.status : undefined,
           transaction_type:
             apiTransactionType !== 'all' ? apiTransactionType : undefined,
-          search: debouncedSearchTerm || undefined,
+          search: submittedSearchTerm || undefined,
         },
       });
 
@@ -60,18 +60,8 @@ const AdminOrderHistory = () => {
   };
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 500);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm]);
-
-  useEffect(() => {
     fetchOrders();
-  }, [pagination.page, filters, debouncedSearchTerm]);
+  }, [pagination.page, filters, submittedSearchTerm]);
 
   const handlePageChange = (newPage) => {
     setPagination((prev) => ({
@@ -101,12 +91,18 @@ const AdminOrderHistory = () => {
     }));
   };
 
-  const handleSearch = (e) => {
+  const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
-    setPagination((prev) => ({
-      ...prev,
-      page: 1,
-    }));
+  };
+
+  const handleSearchSubmit = () => {
+    setSubmittedSearchTerm(searchTerm);
+    if (pagination.page !== 1) {
+      setPagination((prev) => ({
+        ...prev,
+        page: 1,
+      }));
+    }
   };
 
   const viewOrderDetails = async (orderId) => {
@@ -168,17 +164,24 @@ const AdminOrderHistory = () => {
 
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="relative">
+        <div className="relative flex items-center">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <FiSearch className="text-gray-400" />
           </div>
           <input
             type="text"
             placeholder="Search orders..."
-            className="pl-10 pr-4 py-2 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="pl-10 pr-4 py-2 w-full border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             value={searchTerm}
-            onChange={handleSearch}
+            onChange={handleSearchChange}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
           />
+          <button
+            onClick={handleSearchSubmit}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-r-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            Search
+          </button>
         </div>
 
         <div className="flex items-center space-x-2">
