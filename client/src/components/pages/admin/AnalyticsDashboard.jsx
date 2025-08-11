@@ -458,7 +458,7 @@ const AnalyticsDashboard = () => {
                                   );
                                   const percentage =
                                     total > 0
-                                      ? Math.round((value / total) * 100)
+                                      ? parseFloat(((value / total) * 100).toFixed(1))
                                       : 0;
                                   return `${label}: ${value} (${percentage}%)`;
                                 },
@@ -556,9 +556,10 @@ const AnalyticsDashboard = () => {
                                     (a, b) => a + b,
                                     0
                                   );
-                                  const percentage = Math.round(
-                                    (value / total) * 1000
-                                  );
+                                  const percentage =
+                                    total > 0
+                                      ? parseFloat(((value / total) * 100).toFixed(1))
+                                      : 0;
                                   return `${label}: ${value} (${percentage}%)`;
                                 },
                               },
@@ -601,7 +602,7 @@ const AnalyticsDashboard = () => {
                                   );
                                   const percentage =
                                     total > 0
-                                      ? Math.round((value / total) * 100)
+                                      ? parseFloat(((value / total) * 100).toFixed(1))
                                       : 0;
                                   return `${label}: ${value} (${percentage}%)`;
                                 },
@@ -768,7 +769,7 @@ const AnalyticsDashboard = () => {
                                   );
                                   const percentage =
                                     total > 0
-                                      ? Math.round((value / total) * 1000)
+                                      ? parseFloat(((value / total) * 100).toFixed(1))
                                       : 0;
                                   return `${label}: ${value} (${percentage}%)`;
                                 },

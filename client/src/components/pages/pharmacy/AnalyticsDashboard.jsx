@@ -282,9 +282,10 @@ const AnalyticsDashboard = () => {
                                     (a, b) => a + b,
                                     0
                                   );
-                                  const percentage = Math.round(
-                                    (value / total) * 100
-                                  );
+                                  const percentage =
+                                    total > 0
+                                      ? parseFloat(((value / total) * 100).toFixed(2))
+                                      : 0;
                                   return `${label}: ${value} (${percentage}%)`;
                                 },
                               },

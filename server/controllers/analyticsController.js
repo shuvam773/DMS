@@ -199,46 +199,82 @@ const getChartsData = async (req, res) => {
         FROM drugs
       `);
 
+      const userRoles = userRolesResult.rows[0] || {};
+      const stockLevels = stockLevelsResult.rows[0] || {};
+      const orderStatuses = orderStatusesResult.rows[0] || {};
+      const categoryDistribution = categoryDistributionResult.rows[0] || {};
+
       chartsData = {
-        userRoles: userRolesResult.rows[0],
-        drugTypes: drugTypesResult.rows,
-        stockLevels: stockLevelsResult.rows[0],
-        orderStatuses: orderStatusesResult.rows[0],
-        revenueTrends: {
-          months: revenueTrendsResult.rows.map(row => row.month),
-          revenue: revenueTrendsResult.rows.map(row => parseFloat(row.revenue || 0)),
+        userRoles: {
+          admin: parseInt(userRoles.admin || 0),
+          institute: parseInt(userRoles.institute || 0),
+          pharmacy: parseInt(userRoles.pharmacy || 0),
         },
-        instituteRevenue: instituteRevenueResult.rows.map(row => ({
+        drugTypes: drugTypesResult.rows.map((d) => ({
+          ...d,
+          count: parseInt(d.count || 0),
+        })),
+        stockLevels: {
+          low: parseInt(stockLevels.low || 0),
+          medium: parseInt(stockLevels.medium || 0),
+          high: parseInt(stockLevels.high || 0),
+        },
+        orderStatuses: {
+          pending: parseInt(orderStatuses.pending || 0),
+          approved: parseInt(orderStatuses.approved || 0),
+          shipped: parseInt(orderStatuses.shipped || 0),
+          rejected: parseInt(orderStatuses.rejected || 0),
+          out_of_stock: parseInt(orderStatuses.out_of_stock || 0),
+        },
+        revenueTrends: {
+          months: revenueTrendsResult.rows.map((row) => row.month),
+          revenue: revenueTrendsResult.rows.map((row) =>
+            parseFloat(row.revenue || 0)
+          ),
+        },
+        instituteRevenue: instituteRevenueResult.rows.map((row) => ({
           institute_id: row.institute_id,
           institute_name: row.institute_name,
-          revenue: parseFloat(row.revenue || 0)
+          revenue: parseFloat(row.revenue || 0),
         })),
-        categoryDistribution: categoryDistributionResult.rows[0],
+        categoryDistribution: {
+          ipd: parseInt(categoryDistribution.ipd || 0),
+          opd: parseInt(categoryDistribution.opd || 0),
+          outreach: parseInt(categoryDistribution.outreach || 0),
+          uncategorized: parseInt(categoryDistribution.uncategorized || 0),
+        },
       };
     } else if (userRole === 'institute') {
       // Institute can see data related to their pharmacies and drugs
       // Drug types distribution
-      const drugTypesResult = await db.query(`
+      const drugTypesResult = await db.query(
+        `
         SELECT drug_type as type, COUNT(*) as count 
         FROM drugs 
         WHERE created_by = $1
         GROUP BY drug_type 
         ORDER BY count DESC
         LIMIT 10
-      `, [userId]);
+      `,
+        [userId]
+      );
 
       // Stock levels
-      const stockLevelsResult = await db.query(`
+      const stockLevelsResult = await db.query(
+        `
         SELECT 
           SUM(CASE WHEN stock < 10 THEN 1 ELSE 0 END) as low,
           SUM(CASE WHEN stock >= 10 AND stock <= 50 THEN 1 ELSE 0 END) as medium,
           SUM(CASE WHEN stock > 50 THEN 1 ELSE 0 END) as high
         FROM drugs
         WHERE created_by = $1
-      `, [userId]);
+      `,
+        [userId]
+      );
 
       // Order statuses
-      const orderStatusesResult = await db.query(`
+      const orderStatusesResult = await db.query(
+        `
         SELECT 
           SUM(CASE WHEN oi.status = 'pending' THEN 1 ELSE 0 END) as pending,
           SUM(CASE WHEN oi.status = 'approved' THEN 1 ELSE 0 END) as approved,
@@ -248,10 +284,13 @@ const getChartsData = async (req, res) => {
         FROM order_items oi
         JOIN drugs d ON oi.drug_id = d.id
         WHERE d.created_by = $1
-      `, [userId]);
+      `,
+        [userId]
+      );
 
       // Revenue trends (last 6 months)
-      const revenueTrendsResult = await db.query(`
+      const revenueTrendsResult = await db.query(
+        `
         SELECT 
           TO_CHAR(DATE_TRUNC('month', o.created_at), 'Mon YYYY') as month,
           SUM(o.total_amount) as revenue
@@ -262,10 +301,13 @@ const getChartsData = async (req, res) => {
         AND d.created_by = $1
         GROUP BY DATE_TRUNC('month', o.created_at)
         ORDER BY DATE_TRUNC('month', o.created_at)
-      `, [userId]);
+      `,
+        [userId]
+      );
 
       // Pharmacy revenue (new query)
-      const pharmacyRevenueResult = await db.query(`
+      const pharmacyRevenueResult = await db.query(
+        `
         SELECT 
           u.id as pharmacy_id,
           u.name as pharmacy_name,
@@ -278,10 +320,13 @@ const getChartsData = async (req, res) => {
         GROUP BY u.id, u.name
         ORDER BY revenue DESC
         LIMIT 10
-      `, [userId]);
+      `,
+        [userId]
+      );
 
       // Category distribution (OPD/IPD/OUTREACH)
-      const categoryDistributionResult = await db.query(`
+      const categoryDistributionResult = await db.query(
+        `
         SELECT 
           SUM(CASE WHEN category = 'IPD' THEN 1 ELSE 0 END) as ipd,
           SUM(CASE WHEN category = 'OPD' THEN 1 ELSE 0 END) as opd,
@@ -289,34 +334,63 @@ const getChartsData = async (req, res) => {
           SUM(CASE WHEN category IS NULL THEN 1 ELSE 0 END) as uncategorized
         FROM drugs
         WHERE created_by = $1
-      `, [userId]);
+      `,
+        [userId]
+      );
+
+      const stockLevels = stockLevelsResult.rows[0] || {};
+      const orderStatuses = orderStatusesResult.rows[0] || {};
+      const categoryDistribution = categoryDistributionResult.rows[0] || {};
 
       chartsData = {
-        drugTypes: drugTypesResult.rows,
-        stockLevels: stockLevelsResult.rows[0],
-        orderStatuses: orderStatusesResult.rows[0],
-        revenueTrends: {
-          months: revenueTrendsResult.rows.map(row => row.month),
-          revenue: revenueTrendsResult.rows.map(row => parseFloat(row.revenue || 0)),
+        drugTypes: drugTypesResult.rows.map((d) => ({
+          ...d,
+          count: parseInt(d.count || 0),
+        })),
+        stockLevels: {
+          low: parseInt(stockLevels.low || 0),
+          medium: parseInt(stockLevels.medium || 0),
+          high: parseInt(stockLevels.high || 0),
         },
-        instituteRevenue: pharmacyRevenueResult.rows.map(row => ({
+        orderStatuses: {
+          pending: parseInt(orderStatuses.pending || 0),
+          approved: parseInt(orderStatuses.approved || 0),
+          shipped: parseInt(orderStatuses.shipped || 0),
+          rejected: parseInt(orderStatuses.rejected || 0),
+          out_of_stock: parseInt(orderStatuses.out_of_stock || 0),
+        },
+        revenueTrends: {
+          months: revenueTrendsResult.rows.map((row) => row.month),
+          revenue: revenueTrendsResult.rows.map((row) =>
+            parseFloat(row.revenue || 0)
+          ),
+        },
+        instituteRevenue: pharmacyRevenueResult.rows.map((row) => ({
           pharmacy_id: row.pharmacy_id,
           pharmacy_name: row.pharmacy_name,
-          revenue: parseFloat(row.revenue || 0)
+          revenue: parseFloat(row.revenue || 0),
         })),
-        categoryDistribution: categoryDistributionResult.rows[0],
+        categoryDistribution: {
+          ipd: parseInt(categoryDistribution.ipd || 0),
+          opd: parseInt(categoryDistribution.opd || 0),
+          outreach: parseInt(categoryDistribution.outreach || 0),
+          uncategorized: parseInt(categoryDistribution.uncategorized || 0),
+        },
       };
     } else if (userRole === 'pharmacy') {
       // Pharmacy can only see their own drugs data
       // Drug types distribution
-      const drugTypesResult = await db.query(`
+      const drugTypesResult = await db.query(
+        `
         SELECT drug_type as type, COUNT(*) as count 
         FROM drugs 
         WHERE created_by = $1
         GROUP BY drug_type 
         ORDER BY count DESC
         LIMIT 10
-      `, [userId]);
+      `,
+        [userId]
+      );
 
       // Stock levels
       const stockLevelsResult = await db.query(`
@@ -342,7 +416,8 @@ const getChartsData = async (req, res) => {
       `, [userId]);
 
       // Revenue trends (last 6 months)
-      const revenueTrendsResult = await db.query(`
+      const revenueTrendsResult = await db.query(
+        `
         SELECT 
           TO_CHAR(DATE_TRUNC('month', o.created_at), 'Mon YYYY') as month,
           SUM(o.total_amount) as revenue
@@ -353,10 +428,13 @@ const getChartsData = async (req, res) => {
         AND d.created_by = $1
         GROUP BY DATE_TRUNC('month', o.created_at)
         ORDER BY DATE_TRUNC('month', o.created_at)
-      `, [userId]);
+      `,
+        [userId]
+      );
 
       // Category distribution (OPD/IPD/OUTREACH)
-      const categoryDistributionResult = await db.query(`
+      const categoryDistributionResult = await db.query(
+        `
         SELECT 
           SUM(CASE WHEN category = 'IPD' THEN 1 ELSE 0 END) as ipd,
           SUM(CASE WHEN category = 'OPD' THEN 1 ELSE 0 END) as opd,
@@ -364,17 +442,43 @@ const getChartsData = async (req, res) => {
           SUM(CASE WHEN category IS NULL THEN 1 ELSE 0 END) as uncategorized
         FROM drugs
         WHERE created_by = $1
-      `, [userId]);
+      `,
+        [userId]
+      );
+
+      const stockLevels = stockLevelsResult.rows[0] || {};
+      const orderStatuses = orderStatusesResult.rows[0] || {};
+      const categoryDistribution = categoryDistributionResult.rows[0] || {};
 
       chartsData = {
-        drugTypes: drugTypesResult.rows,
-        stockLevels: stockLevelsResult.rows[0],
-        orderStatuses: orderStatusesResult.rows[0],
-        revenueTrends: {
-          months: revenueTrendsResult.rows.map(row => row.month),
-          revenue: revenueTrendsResult.rows.map(row => parseFloat(row.revenue || 0)),
+        drugTypes: drugTypesResult.rows.map((d) => ({
+          ...d,
+          count: parseInt(d.count || 0),
+        })),
+        stockLevels: {
+          low: parseInt(stockLevels.low || 0),
+          medium: parseInt(stockLevels.medium || 0),
+          high: parseInt(stockLevels.high || 0),
         },
-        categoryDistribution: categoryDistributionResult.rows[0],
+        orderStatuses: {
+          pending: parseInt(orderStatuses.pending || 0),
+          approved: parseInt(orderStatuses.approved || 0),
+          shipped: parseInt(orderStatuses.shipped || 0),
+          rejected: parseInt(orderStatuses.rejected || 0),
+          out_of_stock: parseInt(orderStatuses.out_of_stock || 0),
+        },
+        revenueTrends: {
+          months: revenueTrendsResult.rows.map((row) => row.month),
+          revenue: revenueTrendsResult.rows.map((row) =>
+            parseFloat(row.revenue || 0)
+          ),
+        },
+        categoryDistribution: {
+          ipd: parseInt(categoryDistribution.ipd || 0),
+          opd: parseInt(categoryDistribution.opd || 0),
+          outreach: parseInt(categoryDistribution.outreach || 0),
+          uncategorized: parseInt(categoryDistribution.uncategorized || 0),
+        },
       };
     } else {
       return res.status(403).json({
