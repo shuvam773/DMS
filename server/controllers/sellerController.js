@@ -112,27 +112,8 @@ const listSellerOrders = async (req, res) => {
 const updateOrderItemStatus = async (req, res) => {
   const db = req.app.locals.db;
   const { orderItemId } = req.params;
-  const { status, quantity } = req.body; // Add quantity to the request body
+  const { status, quantity } = req.body;
   const sellerId = req.user.id;
-
-  // Validate inputs
-  if (
-    !status ||
-    !['pending', 'approved', 'rejected', 'shipped'].includes(status)
-  ) {
-    return res.status(400).json({
-      status: false,
-      message:
-        'Valid status is required (pending, approved, rejected, shipped)',
-    });
-  }
-
-  if (quantity && (isNaN(quantity) || quantity <= 0)) {
-    return res.status(400).json({
-      status: false,
-      message: 'Quantity must be a positive number',
-    });
-  }
 
   try {
     // Verify the order item belongs to this seller
@@ -158,8 +139,8 @@ const updateOrderItemStatus = async (req, res) => {
 
     await db.query('BEGIN');
 
-    // Update quantity if provided and status is being changed to approved/shipped
-    if (quantity && ['approved', 'shipped'].includes(status)) {
+    // Always allow quantity update regardless of status
+    if (quantity) {
       await db.query(
         `UPDATE order_items SET quantity = $1, updated_at = NOW() 
          WHERE id = $2`,
@@ -167,27 +148,27 @@ const updateOrderItemStatus = async (req, res) => {
       );
     }
 
-    // Update status
-    await db.query(
-      `UPDATE order_items SET status = $1, updated_at = NOW() 
-       WHERE id = $2`,
-      [status, orderItemId]
-    );
+    // Only update status if it was provided
+    if (status) {
+      await db.query(
+        `UPDATE order_items SET status = $1, updated_at = NOW() 
+         WHERE id = $2`,
+        [status, orderItemId]
+      );
 
-    // Handle stock updates based on status changes
-    if (item.drug_id) {
-      if (status === 'approved' && item.current_status !== 'approved') {
-        // Deduct new quantity when approving for the first time
-        await db.query(`UPDATE drugs SET stock = stock - $1 WHERE id = $2`, [
-          newQuantity,
-          item.drug_id,
-        ]);
-      } else if (status === 'rejected' && item.current_status === 'approved') {
-        // Restore original quantity when rejecting previously approved item
-        await db.query(`UPDATE drugs SET stock = stock + $1 WHERE id = $2`, [
-          item.original_quantity,
-          item.drug_id,
-        ]);
+      // Handle stock updates based on status changes
+      if (item.drug_id) {
+        if (status === 'approved' && item.current_status !== 'approved') {
+          await db.query(`UPDATE drugs SET stock = stock - $1 WHERE id = $2`, [
+            newQuantity,
+            item.drug_id,
+          ]);
+        } else if (status === 'rejected' && item.current_status === 'approved') {
+          await db.query(`UPDATE drugs SET stock = stock + $1 WHERE id = $2`, [
+            item.original_quantity,
+            item.drug_id,
+          ]);
+        }
       }
     }
 

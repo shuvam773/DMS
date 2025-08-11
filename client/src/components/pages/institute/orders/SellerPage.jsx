@@ -63,18 +63,17 @@ const SellerPage = () => {
     }));
   };
 
-  const saveQuantity = async (orderItemId, newStatus) => {
+  const saveQuantity = async (orderItemId) => {
     try {
       const response = await api.patch(
         `/seller/order-items/${orderItemId}/status`,
         {
-          status: newStatus,
           quantity: tempQuantities[orderItemId],
         }
       );
 
       if (response.data.status) {
-        toast.success('Quantity and status updated successfully');
+        toast.success('Quantity updated successfully');
         setEditingQuantities((prev) => {
           const newState = { ...prev };
           delete newState[orderItemId];
@@ -245,9 +244,7 @@ const SellerPage = () => {
                                 className="w-16 p-1 border rounded mr-2"
                               />
                               <button
-                                onClick={() =>
-                                  saveQuantity(item.id, item.status)
-                                }
+                                onClick={() => saveQuantity(item.id)}
                                 className="text-green-600 hover:text-green-800 mr-2"
                                 title="Save"
                               >
@@ -270,9 +267,7 @@ const SellerPage = () => {
                                 {parseFloat(item.unit_price || 0).toFixed(2)} =
                                 ₹{parseFloat(item.total_price || 0).toFixed(2)}
                               </span>
-                              {['pending', 'approved'].includes(
-                                item.status
-                              ) && (
+                              {item.status === 'pending' && (
                                 <button
                                   onClick={() =>
                                     toggleEditQuantity(item.id, item.quantity)
@@ -310,15 +305,14 @@ const SellerPage = () => {
                       <div className="flex items-center space-x-2">
                         <select
                           value={item.status}
-                          onChange={(e) => {
-                            if (editingQuantities[item.id]) {
-                              saveQuantity(item.id, e.target.value);
-                            } else {
-                              updateItemStatus(item.id, e.target.value);
-                            }
-                          }}
+                          onChange={(e) =>
+                            updateItemStatus(item.id, e.target.value)
+                          }
                           className="border rounded p-1 text-sm"
-                          disabled={item.status === 'rejected'}
+                          disabled={
+                            item.status === 'rejected' ||
+                            editingQuantities[item.id]
+                          }
                         >
                           {getStatusOptions(item.status).map((option) => (
                             <option key={option.value} value={option.value}>
