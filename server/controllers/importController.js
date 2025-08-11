@@ -1,6 +1,21 @@
 const csv = require('csv-parser');
 const fs = require('fs');
 
+// Helper function to parse dates, supports DD-MM-YYYY and YYYY-MM-DD
+const parseDate = (dateString) => {
+  if (!dateString) return null;
+
+  // Try DD-MM-YYYY
+  const dmyParts = dateString.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (dmyParts) {
+    // new Date(year, monthIndex, day)
+    return new Date(dmyParts[3], dmyParts[2] - 1, dmyParts[1]);
+  }
+
+  // Fallback for YYYY-MM-DD and other ISO formats
+  return new Date(dateString);
+};
+
 const importDrugs = async (req, res) => {
   const db = req.app.locals.db;
   if (!req.file) {
@@ -37,8 +52,19 @@ const importDrugs = async (req, res) => {
         }
 
         // Validate dates
-        const mfgDate = new Date(row['Manufacturing Date']);
-        const expDate = new Date(row['Expiration Date']);
+        const mfgDate = parseDate(row['Manufacturing Date']);
+        const expDate = parseDate(row['Expiration Date']);
+
+        if (
+          !mfgDate ||
+          !expDate ||
+          isNaN(mfgDate.getTime()) ||
+          isNaN(expDate.getTime())
+        ) {
+          throw new Error(
+            'Invalid date format. Supported formats: DD-MM-YYYY, YYYY-MM-DD.'
+          );
+        }
 
         if (mfgDate >= expDate) {
           throw new Error('Manufacturing date must be before expiration date');

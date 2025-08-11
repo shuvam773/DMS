@@ -1192,8 +1192,8 @@ const DrugsTable = () => {
                 />
                 <p className="mt-1 text-sm text-gray-500">
                   CSV should include columns: Drug Type, Name, Batch No,
-                  Description, Stock, Manufacturing Date (YYYY-MM-DD),
-                  Expiration Date (YYYY-MM-DD), Price, Category
+                  Description, Stock, Manufacturing Date (DD-MM-YYYY), Expiration Date (DD-MM-YYYY),
+                  Price, Category
                 </p>
               </div>
 
