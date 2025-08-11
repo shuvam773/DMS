@@ -97,17 +97,17 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
       }
 
       if (user.role !== 'admin') {
-        throw new Error('Only admin users can update institutes');
+        throw new Error('Only admin users can update users');
       }
 
       const response = await api.put(`/users/${institute.id}`, formData);
 
-      toast.success('Institute updated successfully!');
+      toast.success('User updated successfully!');
       onSave(response.data.institute);
       onClose();
     } catch (error) {
       console.error('Error:', error);
-      let errorMessage = 'Failed to update institute';
+      let errorMessage = 'Failed to update user';
       let newFieldErrors = {};
 
       if (error.response?.status === 409) {
@@ -329,7 +329,7 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Updating...' : 'Update Institute'}
+                {isSubmitting ? 'Updating...' : 'Update User'}
               </button>
             </div>
           </form>

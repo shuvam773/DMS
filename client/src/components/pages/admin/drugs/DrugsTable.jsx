@@ -10,11 +10,13 @@ import {
   FiSave,
   FiCheck,
   FiXCircle,
+  FiDownload,
 } from 'react-icons/fi';
 import { FaPills, FaExclamationTriangle } from 'react-icons/fa';
 import api from '../../../../api/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { FiUpload } from 'react-icons/fi';
 
 const DrugsTable = () => {
   const [drugs, setDrugs] = useState([]);
@@ -56,6 +58,10 @@ const DrugsTable = () => {
   // State for drug types and names from database
   const [drugTypes, setDrugTypes] = useState([]);
   const [availableDrugNames, setAvailableDrugNames] = useState([]);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importProgress, setImportProgress] = useState(null);
+  const [importErrors, setImportErrors] = useState([]);
 
   // Fetch drug types from database
   const fetchDrugTypes = async () => {
@@ -128,50 +134,58 @@ const DrugsTable = () => {
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(drug => 
-        drug.name.toLowerCase().includes(term) ||
-        drug.batch_no?.toLowerCase().includes(term) ||
-        drug.description?.toLowerCase().includes(term) ||
-        drug.drug_type?.toLowerCase().includes(term) ||
-        drug.category?.toLowerCase().includes(term)
+      result = result.filter(
+        (drug) =>
+          drug.name.toLowerCase().includes(term) ||
+          drug.batch_no?.toLowerCase().includes(term) ||
+          drug.description?.toLowerCase().includes(term) ||
+          drug.drug_type?.toLowerCase().includes(term) ||
+          drug.category?.toLowerCase().includes(term)
       );
     }
 
     if (filters.expiringSoon) {
-      result = result.filter(drug => isExpiringSoon(drug.exp_date));
+      result = result.filter((drug) => isExpiringSoon(drug.exp_date));
     }
 
     if (filters.lowStock) {
-      result = result.filter(drug => drug.stock <= 10);
+      result = result.filter((drug) => drug.stock <= 10);
     }
 
     if (filters.priceRange[0] || filters.priceRange[1]) {
-      const minPrice = filters.priceRange[0] ? parseFloat(filters.priceRange[0]) : 0;
-      const maxPrice = filters.priceRange[1] ? parseFloat(filters.priceRange[1]) : Infinity;
-      result = result.filter(drug => 
-        drug.price >= minPrice && 
-        drug.price <= maxPrice
+      const minPrice = filters.priceRange[0]
+        ? parseFloat(filters.priceRange[0])
+        : 0;
+      const maxPrice = filters.priceRange[1]
+        ? parseFloat(filters.priceRange[1])
+        : Infinity;
+      result = result.filter(
+        (drug) => drug.price >= minPrice && drug.price <= maxPrice
       );
     }
 
     if (filters.category) {
-      result = result.filter(drug => drug.category === filters.category);
+      result = result.filter((drug) => drug.category === filters.category);
     }
 
     if (filters.drugType) {
-      result = result.filter(drug => drug.drug_type === filters.drugType);
+      result = result.filter((drug) => drug.drug_type === filters.drugType);
     }
 
     if (filters.addedBy) {
-      result = result.filter(drug => drug.creator_name === filters.addedBy);
+      result = result.filter((drug) => drug.creator_name === filters.addedBy);
     }
 
     if (filters.expDateRange[0] || filters.expDateRange[1]) {
-      result = result.filter(drug => {
+      result = result.filter((drug) => {
         if (!drug.exp_date) return false;
         const expDate = new Date(drug.exp_date);
-        const startDate = filters.expDateRange[0] ? new Date(filters.expDateRange[0]) : null;
-        const endDate = filters.expDateRange[1] ? new Date(filters.expDateRange[1]) : null;
+        const startDate = filters.expDateRange[0]
+          ? new Date(filters.expDateRange[0])
+          : null;
+        const endDate = filters.expDateRange[1]
+          ? new Date(filters.expDateRange[1])
+          : null;
 
         if (startDate && expDate < startDate) return false;
         if (endDate && expDate > endDate) return false;
@@ -182,11 +196,11 @@ const DrugsTable = () => {
     // Update pagination
     const total = result.length;
     const totalPages = Math.ceil(total / pagination.limit);
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
       total,
       totalPages,
-      page: prev.page > totalPages ? 1 : prev.page
+      page: prev.page > totalPages ? 1 : prev.page,
     }));
 
     setFilteredDrugs(result);
@@ -200,7 +214,7 @@ const DrugsTable = () => {
   };
 
   const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
   const handleFilterChange = (e) => {
@@ -364,6 +378,69 @@ const DrugsTable = () => {
     }
   };
 
+  const handleImportClick = () => {
+    setShowImportModal(true);
+    setImportFile(null);
+    setImportProgress(null);
+    setImportErrors([]);
+  };
+
+  const handleFileChange = (e) => {
+    setImportFile(e.target.files[0]);
+  };
+
+  const handleImportSubmit = async () => {
+    if (!importFile) {
+      toast.error('Please select a file to upload');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', importFile);
+
+    try {
+      setImportProgress({ status: 'Uploading...', percent: 0 });
+
+      const response = await api.post('/drugs/import', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setImportProgress({
+            status: 'Uploading...',
+            percent: percentCompleted,
+          });
+        },
+      });
+
+      setImportProgress({
+        status: 'Processing...',
+        percent: 100,
+      });
+
+      if (response.data.errors && response.data.errors.length > 0) {
+        setImportErrors(response.data.errors);
+        toast.warning(
+          `Import completed with ${response.data.successCount} successes and ${response.data.errors.length} errors`
+        );
+      } else {
+        toast.success(
+          `Successfully imported ${response.data.successCount} drugs`
+        );
+        fetchDrugs(); // Refresh the drug list
+        setShowImportModal(false);
+      }
+    } catch (error) {
+      console.error('Error importing drugs:', error);
+      toast.error(error.response?.data?.message || 'Failed to import drugs');
+    } finally {
+      setImportProgress(null);
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this drug?')) {
       return;
@@ -412,14 +489,23 @@ const DrugsTable = () => {
             <FaPills className="mr-2 text-blue-600" />
             Drugs Inventory
           </h2>
-          <button
-            onClick={handleAddNew}
-            disabled={isAdding}
-            className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
-          >
-            <FiPlus className="mr-2" />
-            Add New Drug
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleImportClick}
+              className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors whitespace-nowrap"
+            >
+              <FiUpload className="mr-2" />
+              Import CSV
+            </button>
+            <button
+              onClick={handleAddNew}
+              disabled={isAdding}
+              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
+            >
+              <FiPlus className="mr-2" />
+              Add New Drug
+            </button>
+          </div>
         </div>
 
         {/* Search and Filter Section */}
@@ -1117,6 +1203,101 @@ const DrugsTable = () => {
                 </button>
               </div>
             )}
+          </div>
+        )}
+        {showImportModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Import Drugs from CSV</h3>
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <FiX className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select CSV File
+                </label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  className="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-md file:border-0
+            file:text-sm file:font-semibold
+            file:bg-blue-50 file:text-blue-700
+            hover:file:bg-blue-100"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  CSV should include columns: Drug Type, Name, Batch No,
+                  Description, Stock, Manufacturing Date (YYYY-MM-DD),
+                  Expiration Date (YYYY-MM-DD), Price, Category
+                </p>
+              </div>
+
+              {importProgress && (
+                <div className="mb-4">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700">
+                      {importProgress.status}
+                    </span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {importProgress.percent}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div
+                      className="bg-blue-600 h-2.5 rounded-full"
+                      style={{ width: `${importProgress.percent}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
+              {importErrors.length > 0 && (
+                <div className="mb-4 max-h-60 overflow-y-auto">
+                  <h4 className="text-sm font-medium text-red-700 mb-2">
+                    Errors ({importErrors.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {importErrors.map((error, index) => (
+                      <div
+                        key={index}
+                        className="text-sm text-red-600 p-2 bg-red-50 rounded"
+                      >
+                        <p>
+                          <strong>Row {error.row}:</strong> {error.error}
+                        </p>
+                        <pre className="text-xs text-gray-600 mt-1 overflow-x-auto">
+                          {JSON.stringify(error.data, null, 2)}
+                        </pre>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleImportSubmit}
+                  disabled={!importFile || importProgress}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Import
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

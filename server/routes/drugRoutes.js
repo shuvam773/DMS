@@ -2,8 +2,13 @@ const express = require('express');
 const drugCtrl = require('../controllers/drugController');
 const verifyToken = require('../middlewares/authMiddleware');
 const authorizeRole = require('../middlewares/roleMiddleware');
+const importController = require('../controllers/importController');
+const upload = require('../middlewares/upload');
 
 const router = express.Router();
+
+
+router.post('/import', verifyToken, authorizeRole('admin', 'institute', 'pharmacy'), upload.single('file'), importController.importDrugs);
 
 // POST Drug all users can create drugs
 router.post('/', verifyToken, authorizeRole('admin', 'institute', 'pharmacy'), drugCtrl.addDrug);
@@ -22,7 +27,6 @@ router.put('/:id', verifyToken, authorizeRole('admin', 'institute', 'pharmacy'),
 
 // DELETE Drug
 router.delete('/:id', verifyToken, authorizeRole('admin', 'institute', 'pharmacy'), drugCtrl.deleteDrug);
-
 
 
 

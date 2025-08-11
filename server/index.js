@@ -3,6 +3,8 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const { Client } = require('pg');
+const fs = require('fs');
+const path = require('path');
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -57,6 +59,12 @@ const startServer = async () => {
 
         // Making the client accessible in routes via app locals
         app.locals.db = connectDb;
+
+        // Ensure the uploads directory exists
+        const uploadsDir = path.join(__dirname, 'uploads');
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir);
+        }
 
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
