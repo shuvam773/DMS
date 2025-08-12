@@ -25,6 +25,7 @@ const drugTypeNameRoutes = require('./routes/drugTypeNameRouters');
 const PORT = process.env.PORT;
 
 // Middleware
+app.set('trust proxy', 1); // Trust first proxy
 app.use(express.json());
 app.use(cors());
 

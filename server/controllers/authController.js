@@ -1,5 +1,40 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { RateLimiterPostgres } = require('rate-limiter-flexible');
+
+const getIp = (req) => {
+  let ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  // In case of multiple proxies, the IP can be a comma-separated list.
+  // The first one is the client's IP.
+  if (ip && ip.includes(',')) {
+    ip = ip.split(',')[0].trim();
+  }
+  // For IPv6-mapped IPv4 addresses like ::ffff:127.0.0.1
+  if (ip && ip.includes('::ffff:')) {
+    ip = ip.split(':').pop();
+  }
+  return ip || 'unknown';
+};
+
+const logLoginAttempt = async (
+  db,
+  userId,
+  email,
+  ipAddress,
+  userAgent,
+  status,
+  failureReason
+) => {
+  try {
+    await db.query(
+      `INSERT INTO login_logs (user_id, email, ip_address, user_agent, status, failure_reason)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [userId, email, ipAddress, userAgent, status, failureReason]
+    );
+  } catch (err) {
+    console.error('Failed to log login attempt:', err);
+  }
+};
 
 // Register user
 const register = async (req, res) => {
@@ -83,54 +118,217 @@ const register = async (req, res) => {
   }
 };
 
+
+
+let rateLimiter; // Initialize once globally
+
+const initRateLimiter = (db) => {
+  if (!rateLimiter) {
+    rateLimiter = new RateLimiterPostgres({
+      storeClient: db,
+      tableName: 'rate_limiter',
+      keyPrefix: 'login_fail',
+      points: 5,
+      duration: 60 * 10, // 10 min window
+      blockDuration: 60 * 10, // block for 10 minutes
+    });
+  }
+  return rateLimiter;
+};
+
+const getRemainingAttempts = async (key) => {
+  try {
+    const res = await rateLimiter.get(key);
+    return res !== null ? res.remainingPoints : 5;
+  } catch (err) {
+    console.error('Error getting remaining attempts:', err);
+    return 5;
+  }
+};
+
 // Login user
 const login = async (req, res) => {
   const db = req.app.locals.db;
   const { email, password } = req.body;
+  const ipAddress = getIp(req);
+  const userAgent = req.get('User-Agent') || 'unknown';
+
+  // Ensure rate limiter initialized
+  initRateLimiter(db);
+  const key = `login_${email}`;
 
   try {
-    const result = await db.query('SELECT * FROM users WHERE email = $1', [
-      email,
-    ]);
-    const user = result.rows[0];
+    // 1) Check if blocked
+    try {
+      const rateRes = await rateLimiter.get(key);
+      if (rateRes && rateRes.remainingPoints <= 0) {
+        const retrySecs = Math.ceil((rateRes.msBeforeNext || 0) / 1000);
+        await logLoginAttempt(db, null, email, ipAddress, userAgent, 'blocked', 'rate_limit_exceeded');
+
+        return res.status(429).json({
+          status: false,
+          errorType: 'rate_limit_exceeded',
+          message: `Too many login attempts. Try again in ${Math.ceil(retrySecs / 60)} minutes.`,
+          retryAfter: retrySecs,
+          attemptsRemaining: 0,
+        });
+      }
+    } catch (rlErr) {
+      // If rate limiter table has problems, log and continue (but no blocking)
+      console.error('Rate limiter get error:', rlErr);
+      // If Postgres date/time error or table missing previously, this should be resolved by migration above.
+    }
+
+    // 2) Find user
+    const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = userResult.rows[0];
 
     if (!user) {
-      return res
-        .status(403)
-        .json({ message: 'User does not exist', status: false });
+      // consume a point for failed attempt
+      try { await rateLimiter.consume(key); } catch (consumeErr) { /* swallow */ }
+      await logLoginAttempt(db, null, email, ipAddress, userAgent, 'failed', 'user_not_found');
+      return res.status(403).json({
+        status: false,
+        errorType: 'user_not_found',
+        message: 'No account found with this email',
+        attemptsRemaining: await getRemainingAttempts(key),
+      });
     }
 
+    // 3) Check status
+    if (user.status !== 'Active') {
+      try { await rateLimiter.consume(key); } catch (consumeErr) { /* swallow */ }
+      await logLoginAttempt(db, user.id, email, ipAddress, userAgent, 'failed', 'account_inactive');
+      return res.status(403).json({
+        status: false,
+        errorType: 'account_inactive',
+        message: 'Account not active. Please contact support.',
+        attemptsRemaining: await getRemainingAttempts(key),
+      });
+    }
+
+    // 4) Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res
-        .status(400)
-        .json({ message: 'Invalid credentials', status: false });
+      try { await rateLimiter.consume(key); } catch (consumeErr) { /* swallow */ }
+      await logLoginAttempt(db, user.id, email, ipAddress, userAgent, 'failed', 'incorrect_password');
+      return res.status(403).json({
+        status: false,
+        errorType: 'incorrect_password',
+        message: 'Incorrect password.',
+        attemptsRemaining: await getRemainingAttempts(key),
+      });
     }
 
-    const jwtToken = jwt.sign(
-      {
-        email: user.email,
-        userId: user.id,
-        role: user.role,
-        createdBy: user.created_by,
-        name: user.name
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
+    // 5) Success - reset limiter for this key
+    try { await rateLimiter.delete(key); } catch (delErr) { /* swallow */ }
+    await logLoginAttempt(db, user.id, email, ipAddress, userAgent, 'success', null);
 
-    res.status(200).json({
-      message: 'Login Successful',
-      status: true,
-      jwtToken,
-      id: user.id,
-      name: user.name,
+    // create token
+    const jwtToken = jwt.sign({
+      email: user.email,
+      userId: user.id,
       role: user.role,
-      created_by: user.created_by,
-      email: user.email
+      name: user.name,
+    }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+    return res.status(200).json({
+      status: true,
+      message: 'Login Successful',
+      jwtToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        email: user.email,
+      }
+    });
+
+  } catch (err) {
+    console.error('Login error:', err);
+    await logLoginAttempt(db, null, email, ipAddress, userAgent, 'failed', 'server_error');
+    return res.status(500).json({
+      status: false,
+      errorType: 'server_error',
+      message: 'Internal server error during login',
+      // avoid sending err.message in production
+    });
+  }
+};
+
+
+//user Login history
+const getLoginHistory = async (req, res) => {
+  const db = req.app.locals.db;
+  const { id: userId, role } = req.user; // From JWT
+  const { limit = 50, status } = req.query;
+
+  try {
+    let query;
+    const queryParams = [];
+    let paramCount = 1;
+
+    if (role === 'admin') {
+      query = `
+        SELECT 
+          l.id,
+          l.email,
+          u.id as user_id,
+          u.name,
+          u.role,
+          l.ip_address,
+          l.user_agent,
+          l.status,
+          l.failure_reason,
+          TO_CHAR(l.attempt_time, 'YYYY-MM-DD HH24:MI:SS') as attempt_time
+        FROM login_logs l
+        LEFT JOIN users u ON l.user_id = u.id
+      `;
+      
+      if (status) {
+        query += ` WHERE l.status = $${paramCount}`;
+        queryParams.push(status);
+        paramCount++;
+      }
+      
+    } else {
+      query = `
+        SELECT 
+          id,
+          ip_address,
+          user_agent,
+          status,
+          failure_reason,
+          TO_CHAR(attempt_time, 'YYYY-MM-DD HH24:MI:SS') as attempt_time
+        FROM login_logs
+        WHERE user_id = $${paramCount}`;
+      queryParams.push(userId);
+      paramCount++;
+
+      if (status) {
+        query += ` AND status = $${paramCount}`;
+        queryParams.push(status);
+        paramCount++;
+      }
+    }
+
+    query += `
+      ORDER BY attempt_time DESC
+      LIMIT $${paramCount}`;
+    queryParams.push(limit);
+
+    const result = await db.query(query, queryParams);
+
+    res.json({
+      status: true,
+      loginHistory: result.rows,
     });
   } catch (err) {
-    return res.status(500).json({ msg: err.message });
+    res.status(500).json({
+      status: false,
+      message: 'Failed to fetch login history',
+      error: err.message,
+    });
   }
 };
 
@@ -284,4 +482,5 @@ module.exports = {
   login,
   getUser,
   getAllUsers,
+  getLoginHistory,
 };

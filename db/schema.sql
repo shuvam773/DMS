@@ -92,3 +92,26 @@ CREATE TABLE drug_names (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(type_id, name)
 );
+
+--create a table for the rate limiter
+CREATE TABLE rate_limiter (
+  key text PRIMARY KEY,
+  points integer NOT NULL,
+  expire bigint NOT NULL
+);
+
+CREATE INDEX idx_rate_limiter_expire ON rate_limiter (expire);
+
+CREATE TABLE login_logs (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  email VARCHAR(255) NOT NULL,
+  ip_address VARCHAR(45) NOT NULL,
+  user_agent TEXT,
+  status VARCHAR(20) NOT NULL, -- 'success', 'failed', 'blocked'
+  attempt_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  failure_reason VARCHAR(255)
+);
+
+CREATE INDEX idx_login_logs_email ON login_logs(email);
+CREATE INDEX idx_login_logs_time ON login_logs(attempt_time);

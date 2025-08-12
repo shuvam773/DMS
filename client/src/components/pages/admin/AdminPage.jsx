@@ -7,7 +7,8 @@ import {
   FiChevronLeft,
   FiLoader,
   FiMenu,
-  FiX
+  FiX,
+  FiClock
 } from 'react-icons/fi';
 import { FaRegHospital, FaPills, FaPlusCircle } from 'react-icons/fa';
 import AnalyticsDashboard from './AnalyticsDashboard';
@@ -23,6 +24,7 @@ import api from '../../../api/api';
 import { NavLink, Routes, Route, Navigate } from 'react-router-dom';
 import DrugManagement from './drugs/DrugManagement';
 import { useMediaQuery } from 'react-responsive';
+import LoginHistory from '../../auth/LoginHistory';
 
 const AdminPage = () => {
   const { user, logout } = useContext(UserContext);
@@ -154,6 +156,7 @@ const AdminPage = () => {
               { id: 'drugs', icon: <FaPills />, label: 'Drugs', to: 'drugs' },
               { id: 'drug-management', icon: <FaPlusCircle />, label: 'Drug Types', to: 'drug-management' },
               { id: 'orders-history', icon: <MdBorderColor />, label: 'Orders', to: 'orders-history' },
+              { id: 'login-history', icon: <FiClock />, label: 'Login History', to: 'login-history' },
               { id: 'settings', icon: <FiSettings />, label: 'Settings', to: 'settings' },
             ].map((item) => (
               <li key={item.id}>
@@ -232,6 +235,7 @@ const AdminPage = () => {
               <Route path="drugs" element={<DrugsTable />} />
               <Route path="drug-management" element={<DrugManagement />} />
               <Route path="orders-history" element={<AdminOrderHistory />} />
+              <Route path="login-history" element={<LoginHistory />} />
               <Route path="settings" element={<AdminSettings />} />
             </Routes>
           </div>

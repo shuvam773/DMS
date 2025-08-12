@@ -38,6 +38,7 @@ const App = () => {
             <Route path="drugs" element={<AdminPage type="drugs" />} />
             <Route path="drug-management" element={<AdminPage type="drug-management" />} />
             <Route path="orders-history" element={<AdminPage type="orders-history" />} />
+            <Route path="login-history" element={<AdminPage type="login-history" />} />
             <Route path="settings" element={<AdminPage type="settings" />} />
           </Route>
           
