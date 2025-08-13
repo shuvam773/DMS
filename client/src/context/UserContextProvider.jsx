@@ -24,7 +24,7 @@ const UserContextProvider = ({ children }) => {
           email: localStorage.getItem('userEmail') || decoded.email || '',
           id: localStorage.getItem('userId') || decoded.userId || '',
           created_by:
-            localStorage.getItem('userCreatedBy') || decoded.createdBy || null,
+            localStorage.getItem('userCreatedBy') || decoded.created_by || null,
           isAuthenticated: true,
           jwtToken: token,
         };

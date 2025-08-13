@@ -80,6 +80,7 @@ const Login = () => {
           role: response.data.user?.role || '',
           email: response.data.user?.email || loginInfo.email,
           id: response.data.user?.id || '',
+          created_by: response.data.user?.created_by || null,
           isAuthenticated: true,
         });
       }

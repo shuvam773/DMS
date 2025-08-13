@@ -229,6 +229,7 @@ const login = async (req, res) => {
       email: user.email,
       userId: user.id,
       role: user.role,
+      createdBy: user.created_by,
       name: user.name,
     }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
@@ -240,6 +241,7 @@ const login = async (req, res) => {
         id: user.id,
         name: user.name,
         role: user.role,
+        created_by: user.created_by,
         email: user.email,
       }
     });
