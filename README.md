@@ -15,11 +15,13 @@ A full-stack web application for managing drug inventories, orders, and users ac
 - [Usage](#usage)
 - [Development](#development)
 - [Docker Support](#docker-support)
+- [Contributing](#contributing)
+- [Contact](#contact)
 - [License](#license)
 
 ---
 
-## ✅ Features
+## Features
 
 - **Role-based Access**: Admin, Institute, and Pharmacy with distinct dashboards and permissions.
 - **Drug Inventory Management**: Add, edit, and track drugs with batch, expiry, and stock details.
@@ -31,7 +33,7 @@ A full-stack web application for managing drug inventories, orders, and users ac
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 <pre><code>
 DMS/
@@ -57,7 +59,7 @@ DMS/
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend**: React, Vite, TailwindCSS
 - **Backend**: Node.js, Express
@@ -66,7 +68,7 @@ DMS/
 
 ---
 
-## 🗃️ Database Schema
+## Database Schema
 
 - **users**: Stores all user types (admin, institute, pharmacy) with role, status, and contact info.
 - **drugs**: Drug inventory with type, batch, expiry, stock, and price.
@@ -77,7 +79,7 @@ DMS/
 
 ---
 
-## ⚙️ Setup & Installation
+## Setup & Installation
 
 ### Prerequisites
 
@@ -129,7 +131,7 @@ psql -U "your_username" -d "your_db_name" -f db/schema.sql
 
 ---
 
-## 🚀 Usage
+## Usage
 
 ### Start Backend
 
@@ -150,7 +152,7 @@ npm run dev
 
 ---
 
-## 🧑‍💻 Development
+## Development
 
 - **Frontend**: Work in `client/src/components/pages/`
 - **Backend**: Modify logic in `server/controllers/` and routes in `server/routes/`
@@ -158,7 +160,7 @@ npm run dev
 
 ---
 
-## 🐳 Docker Support
+## Docker Support
 
 To run the full stack with Docker:
 
@@ -175,18 +177,15 @@ All services are defined in `docker-compose.yml`.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome!  
 Feel free to open an issue or submit a pull request.
 
 ---
 
-## 📬 Contact
+## Contact
 
 For questions or support, please open an issue on the GitHub repository.
 
 ---
-
-
-
