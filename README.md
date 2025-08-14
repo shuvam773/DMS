@@ -89,7 +89,7 @@ DMS/
 ### 1. Clone the Repository
 
 <pre><code>
-git clone <repo-url>
+git clone https://github.com/shuvam773/DMS.git <repo-url>
 cd DMS
 </code></pre>
 
@@ -104,14 +104,9 @@ cd ../server
 npm install
 </code></pre>
 
-
-### 3. Configure Environment
-
-- Set up your PostgreSQL database
-
 ### 4. Environment Variables Create a `.env` file in the `server/` directory with the following variables: 
+#### Set up your PostgreSQL database environment 
 <pre><code>
-
 PORT=8080 
 JWT_SECRET=your_jwt_secret_here 
 
@@ -120,12 +115,16 @@ DB_USER=postgres
 DB_PORT=5432 
 DB_PASSWORD=your_db_password_here 
 DB_NAME=dms
+
+OPENROUTER_API_KEY=your_openrouter_api_key
 </code></pre>
 
-### 5. Initialize Database
+## 5. Download and install postgreSQL 
+
+### Initialize Database Schema
 
 <pre><code>
-psql -U <your_username> -d <your_db_name> -f db/schema.sql
+psql -U "your_username" -d "your_db_name" -f db/schema.sql
 </code></pre>
 
 ---
@@ -136,7 +135,7 @@ psql -U <your_username> -d <your_db_name> -f db/schema.sql
 
 <pre><code>
 cd server
-npm start
+npm run dev
 </code></pre>
 
 ### Start Frontend
@@ -147,7 +146,7 @@ npm run dev
 </code></pre>
 
 - Frontend: [http://localhost:5173](http://localhost:5173)  
-- Backend: [http://localhost:3000](http://localhost:3000)
+- Backend: [http://localhost:8080](http://localhost:8080)
 
 ---
 
