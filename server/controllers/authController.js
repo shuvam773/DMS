@@ -1,13 +1,14 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { RateLimiterPostgres } = require('rate-limiter-flexible');
+const crypto = require('crypto')
 
 const getIp = (req) => {
   let ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
   if (ip && ip.includes(',')) {
     ip = ip.split(',')[0].trim();
   }
-  
+
   if (ip && ip.includes('::ffff:')) {
     ip = ip.split(':').pop();
   }
@@ -155,6 +156,12 @@ const login = async (req, res) => {
   initRateLimiter(db);
   const key = `login_${email}`;
 
+  // Create a unique fingerprint for the user
+  const fingerprint = crypto
+    .createHash('sha256')
+    .update(`${ipAddress}${userAgent}`)
+    .digest('hex');
+
   try {
     // 1) Check if blocked
     try {
@@ -172,9 +179,9 @@ const login = async (req, res) => {
         });
       }
     } catch (rlErr) {
-      // If rate limiter table has problems, log and continue (but no blocking)
+      
       console.error('Rate limiter get error:', rlErr);
-      // If Postgres date/time error or table missing previously, this should be resolved by migration above.
+
     }
 
     // 2) Find user
@@ -229,6 +236,7 @@ const login = async (req, res) => {
       role: user.role,
       createdBy: user.created_by,
       name: user.name,
+      fp: fingerprint,
     }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
     return res.status(200).json({
