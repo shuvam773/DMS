@@ -240,10 +240,14 @@ const updateUser = async (req, res) => {
   const db = req.app.locals.db;
   const { id } = req.params;
 
+  console.log('Update request received for user ID:', id);
+  console.log('Request body:', req.body);
+
   try {
     const {
       name,
       email,
+      password,
       phone,
       street,
       city,
@@ -261,12 +265,50 @@ const updateUser = async (req, res) => {
       [id, 'institute', 'pharmacy', 'hospital']
     );
 
+    console.log('Existing institute check:', existingInstitute.rows);
+
     if (existingInstitute.rows.length === 0) {
+      console.log('Institute not found');
       return res.status(404).json({
         status: false,
         message: 'Institute not found',
       });
     }
+
+    // Prepare update fields
+    const updateFields = [
+      name,
+      email,
+      phone,
+      street,
+      city,
+      state,
+      postal_code,
+      country,
+      license_number,
+      status,
+      role,
+      id,
+    ];
+
+    let passwordUpdate = '';
+    let queryParams = [...updateFields];
+
+    // If password is provided, hash it and add to update
+    if (password) {
+      console.log('Password update requested');
+      try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        passwordUpdate = ', password = $13';
+        queryParams.push(hashedPassword);
+        console.log('Password hashed successfully');
+      } catch (hashError) {
+        console.error('Password hashing failed:', hashError);
+        throw new Error('Password hashing failed');
+      }
+    }
+
+    console.log('Final query params:', queryParams);
 
     // Update institute
     const result = await db.query(
@@ -283,34 +325,29 @@ const updateUser = async (req, res) => {
         status = COALESCE($10, status),
         role = COALESCE($11, role),
         updated_at = NOW()
+        ${passwordUpdate}
       WHERE id = $12
       RETURNING id, name, email, status, role, license_number`,
-      [
-        name,
-        email,
-        phone,
-        street,
-        city,
-        state,
-        postal_code,
-        country,
-        license_number,
-        status,
-        role,
-        id,
-      ]
+      queryParams
     );
+
+    console.log('Update successful, result:', result.rows);
 
     res.json({
       status: true,
-      message: 'Institute updated successfully',
+      message:
+        'Institute updated successfully' +
+        (password ? ' (including password)' : ''),
       institute: result.rows[0],
     });
   } catch (err) {
+    console.error('Full error in updateUser:', err);
+    console.error('Error stack:', err.stack);
     res.status(500).json({
       status: false,
       message: 'Server error while updating institute',
       error: err.message,
+      detail: err.detail,
     });
   }
 };
@@ -329,12 +366,10 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: 'Institute not found' });
     }
 
-    res
-      .status(200)
-      .json({
-        message: 'Institute deleted successfully',
-        deletedInstitute: result.rows[0],
-      });
+    res.status(200).json({
+      message: 'Institute deleted successfully',
+      deletedInstitute: result.rows[0],
+    });
   } catch (error) {
     console.error('Error deleting institute:', error.message);
     res.status(500).json({ message: 'Internal server error' });

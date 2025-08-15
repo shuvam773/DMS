@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import UserContext from '../../../../context/UserContext';
-import api from '../../../../api/api'; // Import the api instance
+import api from '../../../../api/api';
 
 const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
   const { user } = useContext(UserContext);
@@ -16,10 +16,13 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
     country: 'India',
     license_number: '',
     role: 'institute',
-    status: 'Active'
+    status: 'Active',
+    password: '', // New password field
+    confirmPassword: '', // Confirm password field
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [showPasswordFields, setShowPasswordFields] = useState(false); // Toggle for password fields
 
   useEffect(() => {
     if (institute) {
@@ -34,20 +37,23 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
         country: institute.country || 'India',
         license_number: institute.license_number || '',
         role: institute.role || 'institute',
-        status: institute.status || 'Active'
+        status: institute.status || 'Active',
+        password: '', // Reset password fields
+        confirmPassword: '',
       });
+      setShowPasswordFields(false); // Reset password fields visibility
     }
   }, [institute]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     // Clear field error when user types
     if (fieldErrors[name]) {
-      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+      setFieldErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
@@ -78,18 +84,38 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
       isValid = false;
     }
 
+    // Password validation only if password fields are shown
+    if (showPasswordFields) {
+      if (!formData.password) {
+        errors.password = 'Password is required';
+        isValid = false;
+      } else if (formData.password.length < 6) {
+        errors.password = 'Password must be at least 6 characters';
+        isValid = false;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match';
+        isValid = false;
+      }
+    }
+
     setFieldErrors(errors);
     return isValid;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
+      console.log('Form validation failed');
       return;
     }
 
     setIsSubmitting(true);
+
+    console.log('Submitting form data:', formData);
+    console.log('Show password fields:', showPasswordFields);
 
     try {
       if (!user || !user.isAuthenticated) {
@@ -100,13 +126,28 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
         throw new Error('Only admin users can update users');
       }
 
-      const response = await api.put(`/users/${institute.id}`, formData);
+      const dataToSend = {
+        ...formData,
+        // Only include password if the checkbox is checked
+        ...(showPasswordFields ? { password: formData.password } : {}),
+      };
+      delete dataToSend.confirmPassword;
 
-      toast.success('User updated successfully!');
+      console.log('Data being sent to API:', dataToSend);
+
+      const response = await api.put(`/users/${institute.id}`, dataToSend);
+      console.log('API response:', response);
+
+      toast.success(
+        'User updated successfully!' +
+          (showPasswordFields ? ' (Password updated)' : '')
+      );
       onSave(response.data.institute);
       onClose();
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Full error:', error);
+      console.error('Error response:', error.response);
+
       let errorMessage = 'Failed to update user';
       let newFieldErrors = {};
 
@@ -118,10 +159,11 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
           });
         }
       } else {
-        errorMessage = error.response?.data?.message || error.message || errorMessage;
+        errorMessage =
+          error.response?.data?.message || error.message || errorMessage;
       }
 
-      setFieldErrors(prev => ({ ...prev, ...newFieldErrors }));
+      setFieldErrors((prev) => ({ ...prev, ...newFieldErrors }));
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -136,13 +178,23 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
         {/* Header */}
         <div className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 border-b sticky top-0 bg-white z-10 rounded-t-lg">
           <h3 className="text-lg sm:text-xl font-bold">Edit Institute</h3>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
             disabled={isSubmitting}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -152,7 +204,9 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               {/* Name Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name*</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name*
+                </label>
                 <input
                   type="text"
                   name="name"
@@ -164,13 +218,17 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                   required
                 />
                 {fieldErrors.name && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {fieldErrors.name}
+                  </p>
                 )}
               </div>
 
               {/* Email Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email*</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email*
+                </label>
                 <input
                   type="email"
                   name="email"
@@ -182,13 +240,17 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                   required
                 />
                 {fieldErrors.email && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {fieldErrors.email}
+                  </p>
                 )}
               </div>
 
               {/* Phone Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone*</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone*
+                </label>
                 <input
                   type="tel"
                   name="phone"
@@ -200,31 +262,41 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                   required
                 />
                 {fieldErrors.phone && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {fieldErrors.phone}
+                  </p>
                 )}
               </div>
 
               {/* License Number Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">License Number*</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  License Number*
+                </label>
                 <input
                   type="text"
                   name="license_number"
                   value={formData.license_number}
                   onChange={handleChange}
                   className={`w-full px-3 py-2 border rounded-md ${
-                    fieldErrors.license_number ? 'border-red-500' : 'border-gray-300'
+                    fieldErrors.license_number
+                      ? 'border-red-500'
+                      : 'border-gray-300'
                   }`}
                   required
                 />
                 {fieldErrors.license_number && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.license_number}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {fieldErrors.license_number}
+                  </p>
                 )}
               </div>
 
               {/* Street Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Street*</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Street*
+                </label>
                 <input
                   type="text"
                   name="street"
@@ -237,7 +309,9 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
 
               {/* City Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City*</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  City*
+                </label>
                 <input
                   type="text"
                   name="city"
@@ -250,7 +324,9 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
 
               {/* State Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State*</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  State*
+                </label>
                 <input
                   type="text"
                   name="state"
@@ -263,7 +339,9 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
 
               {/* Postal Code Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code*</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Postal Code*
+                </label>
                 <input
                   type="text"
                   name="postal_code"
@@ -276,7 +354,9 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
 
               {/* Country Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Country
+                </label>
                 <input
                   type="text"
                   name="country"
@@ -288,7 +368,9 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
 
               {/* Role Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Role
+                </label>
                 <select
                   name="role"
                   value={formData.role}
@@ -302,7 +384,9 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
 
               {/* Status Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
                 <select
                   name="status"
                   value={formData.status}
@@ -312,6 +396,72 @@ const EditInstitute = ({ isOpen, onClose, onSave, institute }) => {
                   <option value="Active">Active</option>
                   <option value="Pending">Pending</option>
                 </select>
+              </div>
+
+              {/* Password Update Section */}
+              <div className="sm:col-span-2">
+                <div className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id="updatePassword"
+                    checked={showPasswordFields}
+                    onChange={() => setShowPasswordFields(!showPasswordFields)}
+                    className="mr-2"
+                  />
+                  <label
+                    htmlFor="updatePassword"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Update Password
+                  </label>
+                </div>
+
+                {showPasswordFields && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        New Password*
+                      </label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className={`w-full px-3 py-2 border rounded-md ${
+                          fieldErrors.password
+                            ? 'border-red-500'
+                            : 'border-gray-300'
+                        }`}
+                      />
+                      {fieldErrors.password && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {fieldErrors.password}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Confirm Password*
+                      </label>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        className={`w-full px-3 py-2 border rounded-md ${
+                          fieldErrors.confirmPassword
+                            ? 'border-red-500'
+                            : 'border-gray-300'
+                        }`}
+                      />
+                      {fieldErrors.confirmPassword && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {fieldErrors.confirmPassword}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -17,7 +17,6 @@ A full-stack web application for managing drug inventories, orders, and users ac
 - [Docker Support](#docker-support)
 - [Contributing](#contributing)
 - [Contact](#contact)
-- [License](#license)
 
 ---
 
