@@ -4,12 +4,10 @@ const { RateLimiterPostgres } = require('rate-limiter-flexible');
 
 const getIp = (req) => {
   let ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  // In case of multiple proxies, the IP can be a comma-separated list.
-  // The first one is the client's IP.
   if (ip && ip.includes(',')) {
     ip = ip.split(',')[0].trim();
   }
-  // For IPv6-mapped IPv4 addresses like ::ffff:127.0.0.1
+  
   if (ip && ip.includes('::ffff:')) {
     ip = ip.split(':').pop();
   }

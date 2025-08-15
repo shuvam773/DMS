@@ -5,13 +5,15 @@ require('dotenv').config();
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const { logRequest, logResponse, errorLogger } = require('./middlewares/loggingMiddleware');
+const morgan = require('morgan');
+
+
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
-
 const drugRoutes = require('./routes/drugRoutes');
 const instituteOrderRoutes = require('./routes/instituteOrderRoutes');
-
 const usersRoutes = require('./routes/usersRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const sellerRoutes = require('./routes/sellerRoutes')
@@ -24,10 +26,20 @@ const drugTypeNameRoutes = require('./routes/drugTypeNameRouters');
 
 const PORT = process.env.PORT;
 
+// HTTP request logging (complementary to our custom logging)
+app.use(morgan('dev', {
+  skip: (req) => req.path === '/healthcheck' // Skip health checks
+}));
+
+
 // Middleware
 app.set('trust proxy', 1); // Trust first proxy
 app.use(express.json());
 app.use(cors());
+
+//logging middleware
+app.use(logRequest);
+app.use(logResponse);
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -43,6 +55,9 @@ app.use("/api/admin/orders", adminOrderRoutes);
 app.use("/api/reset", resetProfileRoutes)
 app.use("/api/chatbot", chatbotRoutes);
 app.use('/api/drug-types-names', drugTypeNameRoutes);
+
+// Error handling middleware (must be after all other middleware and routes)
+app.use(errorLogger);
 
 // PostgreSQL connection
 const connectDb = new Client({
@@ -65,6 +80,12 @@ const startServer = async () => {
         const uploadsDir = path.join(__dirname, 'uploads');
         if (!fs.existsSync(uploadsDir)) {
             fs.mkdirSync(uploadsDir);
+        }
+
+        // Ensure logs directory exists
+        const logsDir = path.join(__dirname, 'logs');
+        if (!fs.existsSync(logsDir)) {
+            fs.mkdirSync(logsDir);
         }
 
         app.listen(PORT, () => {
