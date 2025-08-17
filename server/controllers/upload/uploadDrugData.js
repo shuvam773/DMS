@@ -4,11 +4,11 @@ const { DRUG_NAMES } = require('../../../client/src/constants/drugNames');
 
 async function uploadDrugData() {
   const client = new Client({
-    host: 'dpg-d29k2rmr433s739fhbag-a.oregon-postgres.render.com',
-    user: 'shuvam',
-    port: 5432,
-    password: 'nFu6P3acZJWN8dKLeM0SaA4xZ7sR4ffE',
-    database: 'dms_h9bk',
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    port: process.env.DB_PORT,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000 // 10 seconds timeout
   });
